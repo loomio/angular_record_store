@@ -1,4 +1,5 @@
 RestfulClient = require('./restful_client.coffee')
+_ = window._
 
 module.exports = ($q) ->
   class BaseRecordsInterface

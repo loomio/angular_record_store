@@ -1,3 +1,5 @@
+_ = window._
+
 module.exports =
   class RecordStore
     constructor: (db) ->

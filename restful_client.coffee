@@ -1,3 +1,6 @@
+_ = window._
+$ = window.jQuery
+
 module.exports = ($http, $upload) ->
   class RestfulClient
     apiPrefix: "api/v1"
@@ -11,7 +14,7 @@ module.exports = ($http, $upload) ->
 
     buildUrl: (url, params) ->
       return url unless params?
-      url + "?" + window.jQuery.param(params)
+      url + "?" + $.param(params)
 
     collectionPath: ->
       "#{@apiPrefix}/#{@resourcePlural}"
