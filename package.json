@@ -1,0 +1,32 @@
+{
+  "name": "angular_record_store",
+  "version": "1.0.0",
+  "description": "An ActiveRecord-like ORM built ontop of Loki-js",
+  "main": "index.coffee",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "browserify": {
+    "transform": [
+      "coffeeify"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loomio/angular_record_store"
+  },
+  "keywords": [
+    "orm",
+    "lokijs",
+    "activerecord"
+  ],
+  "author": "Robert Guthrie",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/loomio/angular_record_store/issues"
+  },
+  "homepage": "https://github.com/loomio/angular_record_store",
+  "dependencies": {
+    "coffeeify": "^1.1.0"
+  }
+}
