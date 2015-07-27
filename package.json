@@ -1,6 +1,6 @@
 {
   "name": "angular_record_store",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "An ActiveRecord-like ORM built ontop of Loki-js",
   "main": "index.coffee",
   "scripts": {
