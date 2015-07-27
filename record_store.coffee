@@ -1,6 +1,6 @@
 _ = window._
 
-module.exports =
+module.exports = () ->
   class RecordStore
     constructor: (db) ->
       @db = db

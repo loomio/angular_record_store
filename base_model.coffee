@@ -1,6 +1,6 @@
 _ = window._
 
-module.exports =
+module.exports = () ->
   class BaseModel
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'

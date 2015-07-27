@@ -1,7 +1,6 @@
-RestfulClient = require('./restful_client.coffee')
 _ = window._
 
-module.exports = ($q) ->
+module.exports = (RestfulClient, $q) ->
   class BaseRecordsInterface
     model: 'undefinedModel'
 
