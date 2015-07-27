@@ -4,7 +4,8 @@
   "description": "An ActiveRecord-like ORM built ontop of Loki-js",
   "main": "index.coffee",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify --standalone AngularRecordStore . > standalone.js"
   },
   "browserify": {
     "transform": [
@@ -28,5 +29,8 @@
   "homepage": "https://github.com/loomio/angular_record_store",
   "dependencies": {
     "coffeeify": "^1.1.0"
+  },
+  "devDependencies": {
+    "browserify": "^11.0.0"
   }
 }
