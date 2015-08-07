@@ -39,28 +39,38 @@ module.exports = () ->
       @updateFromJSON(data)
 
     # copy rails snake_case hash, into camelCase object properties
-    # also initialize attributes that end in _at or are listed as moments
     updateFromJSON: (data) ->
+      data = translateKeysToCamelCase(data)
       @scrapeAttributeNames(data)
       @importData(data, @)
+      @copyUnmodifiedValues(data)
+
+    translateKeysToCamelCase: (snakeCaseData) ->
+      camelCaseData = {}
+      _.each _.keys(snakeCaseData), (key) =>
+        camelCaseData[_.camelCase(key)] = snakeCaseData[key]
+        return
 
     scrapeAttributeNames: (data) ->
       _.each _.keys(data), (key) =>
-        camelKey = _.camelCase(key)
-        unless _.contains @constructor.attributeNames, camelKey
-          @constructor.attributeNames.push camelKey
+        unless _.contains @constructor.attributeNames, key
+          @constructor.attributeNames.push key
 
+    # import data with camelCase keys
     importData: (data, dest) ->
       _.each _.keys(data), (key) =>
-        attributeName = _.camelCase(key)
-        if /At$/.test(attributeName)
+        if /At$/.test(key)
           if moment(data[key]).isValid()
-            dest[attributeName] = moment(data[key])
+            dest[key] = moment(data[key])
           else
-            dest[attributeName] = null
+            dest[key] = null
         else
-          dest[attributeName] = data[key]
+          dest[key] = data[key]
         return
+
+    copyUnmodifiedValues: (data) ->
+      @unmodifiedValues = {}
+      @importData(data, @unmodifiedValues)
 
     # copy camcelCase attributes to snake_case object for rails
     serialize: ->
@@ -103,6 +113,10 @@ module.exports = () ->
         @key
       else
         @id
+
+    isUnsaved: ->
+      _.any _.keys(@unmodifiedValues), (key) ->
+        @[key] != @unmodifiedValues[key]
 
     save: =>
       @setErrors()
