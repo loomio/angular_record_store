@@ -1,6 +1,6 @@
-_ = window._
+_ = require('lodash')
 
-module.exports = () ->
+module.exports =
   class BaseModel
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'
@@ -40,26 +40,36 @@ module.exports = () ->
 
     # copy rails snake_case hash, into camelCase object properties
     # also initialize attributes that end in _at or are listed as moments
-    updateFromJSON: (data) ->
+    transformKeys = (data, transform) ->
+      newData = {}
+      _.each _.keys(data), (key) ->
+        newData[_.transform(key)] = data[key]
+        return
+
+    isModified: ->
+      false
+
+    updateFromJSON: (jsonData) ->
+      data = transformKeys(jsonData, _.camelCase)
+
       @scrapeAttributeNames(data)
       @importData(data, @)
 
     scrapeAttributeNames: (data) ->
       _.each _.keys(data), (key) =>
-        camelKey = _.camelCase(key)
-        unless _.contains @constructor.attributeNames, camelKey
-          @constructor.attributeNames.push camelKey
+        unless _.contains @constructor.attributeNames, key
+          @constructor.attributeNames.push key
+        return
 
     importData: (data, dest) ->
       _.each _.keys(data), (key) =>
-        attributeName = _.camelCase(key)
-        if /At$/.test(attributeName)
+        if /At$/.test(key)
           if moment(data[key]).isValid()
-            dest[attributeName] = moment(data[key])
+            dest[key] = moment(data[key])
           else
-            dest[attributeName] = null
+            dest[key] = null
         else
-          dest[attributeName] = data[key]
+          dest[key] = data[key]
         return
 
     # copy camcelCase attributes to snake_case object for rails

@@ -1,5 +1,4 @@
-_ = window._
-$ = window.jQuery
+_ = require('lodash')
 
 module.exports = ($http, $upload) ->
   class RestfulClient
@@ -14,7 +13,14 @@ module.exports = ($http, $upload) ->
 
     buildUrl: (url, params) ->
       return url unless params?
-      url + "?" + $.param(params)
+
+      # note to self, untested function.. you'll probably hate yourself for rewriting this rn
+      encodeParams = (params) ->
+        _.map(_.keys(params), (key) ->
+          encodeURIComponent(key) + "=" + encodeURIComponent(params[key])
+        ).join('&')
+
+      url + "?" + encodeParams(params)
 
     collectionPath: ->
       "#{@apiPrefix}/#{@resourcePlural}"

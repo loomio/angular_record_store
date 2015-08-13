@@ -7,6 +7,8 @@ _ = window._;
 module.exports = function() {
   var BaseModel;
   return BaseModel = (function() {
+    var transformKeys;
+
     BaseModel.singular = 'undefinedSingular';
 
     BaseModel.plural = 'undefinedPlural';
@@ -77,7 +79,21 @@ module.exports = function() {
       return this.updateFromJSON(data);
     };
 
-    BaseModel.prototype.updateFromJSON = function(data) {
+    transformKeys = function(data, transform) {
+      var newData;
+      newData = {};
+      return _.each(_.keys(data), function(key) {
+        newData[_.transform(key)] = data[key];
+      });
+    };
+
+    BaseModel.prototype.isModified = function() {
+      return false;
+    };
+
+    BaseModel.prototype.updateFromJSON = function(jsonData) {
+      var data;
+      data = transformKeys(jsonData, _.camelCase);
       this.scrapeAttributeNames(data);
       return this.importData(data, this);
     };
@@ -85,10 +101,8 @@ module.exports = function() {
     BaseModel.prototype.scrapeAttributeNames = function(data) {
       return _.each(_.keys(data), (function(_this) {
         return function(key) {
-          var camelKey;
-          camelKey = _.camelCase(key);
-          if (!_.contains(_this.constructor.attributeNames, camelKey)) {
-            return _this.constructor.attributeNames.push(camelKey);
+          if (!_.contains(_this.constructor.attributeNames, key)) {
+            _this.constructor.attributeNames.push(key);
           }
         };
       })(this));
@@ -97,16 +111,14 @@ module.exports = function() {
     BaseModel.prototype.importData = function(data, dest) {
       return _.each(_.keys(data), (function(_this) {
         return function(key) {
-          var attributeName;
-          attributeName = _.camelCase(key);
-          if (/At$/.test(attributeName)) {
+          if (/At$/.test(key)) {
             if (moment(data[key]).isValid()) {
-              dest[attributeName] = moment(data[key]);
+              dest[key] = moment(data[key]);
             } else {
-              dest[attributeName] = null;
+              dest[key] = null;
             }
           } else {
-            dest[attributeName] = data[key];
+            dest[key] = data[key];
           }
         };
       })(this));

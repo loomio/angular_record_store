@@ -1,4 +1,4 @@
-_ = window._
+_ = require('lodash')
 
 module.exports = (RestfulClient, $q) ->
   class BaseRecordsInterface
