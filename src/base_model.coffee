@@ -1,4 +1,5 @@
 _ = require('lodash')
+moment = require('moment')
 
 module.exports =
   class BaseModel
@@ -33,21 +34,26 @@ module.exports =
         clone[attr] = @[attr]
         clone
       , {}
-      new @constructor @recordsInterface, attrs, { id: @id, key: @key }
+      cloneRecord = new @constructor(@recordsInterface, attrs, { id: @id, key: @key })
+      cloneRecord.cloneSource = @
+      cloneRecord
 
     update: (data) ->
       @updateFromJSON(data)
 
     # copy rails snake_case hash, into camelCase object properties
     # also initialize attributes that end in _at or are listed as moments
-    transformKeys = (data, transform) ->
+    transformKeys = (data, transformFn) ->
       newData = {}
       _.each _.keys(data), (key) ->
-        newData[_.transform(key)] = data[key]
+        newData[transformFn(key)] = data[key]
         return
+      newData
 
     isModified: ->
-      false
+      if @cloneSource?
+      else
+        false
 
     updateFromJSON: (jsonData) ->
       data = transformKeys(jsonData, _.camelCase)

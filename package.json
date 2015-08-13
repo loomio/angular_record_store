@@ -30,7 +30,8 @@
   "homepage": "https://github.com/loomio/angular_record_store",
   "dependencies": {
     "coffeeify": "^1.1.0",
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "moment": "^2.10.6"
   },
   "devDependencies": {
     "angular": "^1.4.3",

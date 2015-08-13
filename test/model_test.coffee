@@ -1,27 +1,23 @@
+_ = require('lodash')
 angular = require('angular')
-require('angular-mocks/angular-mocks')
-
+mocks = require('angular-mocks/angular-mocks')
+moment = require('moment')
 loki = require('lokijs')
 
 RecordStore = require('../src/record_store.coffee')
+recordStore = new RecordStore(new loki('testdatabase'))
+
 BaseModel = require('../src/base_model.coffee')
-BaseRecordsInterface = null
 DogModel = null
 
+BaseRecordsInterface = null
 dogRecordsInterface = null
-recordStore = null
-lokidb = null
-
-$upload = 'fakeupload'
-db = new loki('testdatabase')
-recordStore = new RecordStore(db)
 
 describe 'base model behaviuor', ->
-
   beforeEach ->
     inject ($httpBackend, $q) ->
 
-      RestfulClient = require('../src/restful_client.coffee')($httpBackend, $upload)
+      RestfulClient = require('../src/restful_client.coffee')($httpBackend, 'fakeUploadService')
       BaseRecordsInterface = require('../src/base_records_interface.coffee')(RestfulClient, $q)
 
       DogModel = require('./dog_model.coffee')(BaseModel)
@@ -38,13 +34,19 @@ describe 'base model behaviuor', ->
   describe 'new', ->
     it 'creates new record with default values', ->
       record = new DogModel(recordStore, {})
-      console.log 'dogrecord', record
       expect(record.isFluffy).toBe(true)
 
-  #describe 'clone', ->
-    #record = null
-    #beforeEach ->
-      #record = new DogModel(recordsInterface, {barks: true})
+  describe 'clone', ->
+    record = null
+    beforeEach ->
+      record = new DogModel(dogRecordsInterface)
+
+    it 'creates a clone of the record with the same values', ->
+      cloneRecord = record.clone()
+
+      _.each record.constructor.attributeNames, (attributeName) ->
+        expect(cloneRecord[attributeName]).toEqual(record[attributeName])
+
 
     #it 'isModified is false when not modified', ->
       #cloneRecord = record.clone()
@@ -52,14 +54,24 @@ describe 'base model behaviuor', ->
 
     #it 'isModfied is true when attribute is changed', ->
       #cloneRecord = record.clone()
-      #cloneRecord.barks = false
+      #cloneRecord.isFluffy = false
       #expect(cloneRecord.isModified()).toBe(true)
 
-  #describe 'updateFromJSON', ->
-    #it 'maps attributes from snake to camelcase',  ->
-      #record = new DogModel(recordsInterface, {})
-      #json = {is_fluffy: false, barks: true, some_attr_name: 'aValue'}
-      #record.updateFromJSON(json)
-      #expect(record.someAttrName).toBe('aValue')
-      #expect(record.isFulffy).toBe(true)
-      #expect(record.barks).toBe(true)
+  describe 'updateFromJSON', ->
+    record = null
+
+    beforeEach ->
+      record = new DogModel(dogRecordsInterface, {})
+
+    it 'assigns attributes snake -> camel case', ->
+      json = {is_fluffy: false, some_attr_name: 'aValue'}
+
+      record.updateFromJSON(json)
+
+      expect(record.isFluffy).toBe(false)
+      expect(record.someAttrName).toBe('aValue')
+
+    it "momentizes attrbutes ending in _at", ->
+      json = {created_at: "2015-08-13T00:00:00Z"}
+      record.updateFromJSON(json)
+      expect(record.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
