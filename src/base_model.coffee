@@ -60,10 +60,7 @@ module.exports =
       if isTimeAttribute(attributeName)
         !(original == current or current.isSame(original))
       else
-        if (original != current) 
-          true
-        else
-          false
+        original != current
 
     modifiedAttributes: ->
       return [] unless @_clonedFrom?

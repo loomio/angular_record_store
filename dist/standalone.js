@@ -104,11 +104,7 @@ module.exports = BaseModel = (function() {
     if (isTimeAttribute(attributeName)) {
       return !(original === current || current.isSame(original));
     } else {
-      if (original !== current) {
-        return true;
-      } else {
-        return false;
-      }
+      return original !== current;
     }
   };
 
