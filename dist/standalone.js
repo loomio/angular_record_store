@@ -15,7 +15,7 @@ module.exports = BaseModel = (function() {
 
   BaseModel.indices = [];
 
-  BaseModel.attributeNames = [];
+  BaseModel.attributeNames = null;
 
   BaseModel.searchableFields = [];
 
@@ -27,7 +27,9 @@ module.exports = BaseModel = (function() {
     this.saveSuccess = bind(this.saveSuccess, this);
     this.destroy = bind(this.destroy, this);
     this.save = bind(this.save, this);
-    this.constructor.attributeNames = [];
+    if (this.constructor.attributeNames == null) {
+      this.constructor.attributeNames = [];
+    }
     this.setErrors();
     this.processing = false;
     Object.defineProperty(this, 'recordsInterface', {
