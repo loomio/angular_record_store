@@ -50,12 +50,29 @@ module.exports =
         return
       newData
 
-    isModified: ->
-      if @_clonedFrom?
-        not _.every @constructor.attributeNames, (attributeName) =>
-          @[attributeName] == @_clonedFrom[attributeName]
+    isTimeAttribute = (attributeName) ->
+      /At$/.test(attributeName)
+
+    attributeIsModified: (attributeName) ->
+      return false unless @_clonedFrom?
+      original = @_clonedFrom[attributeName]
+      current = @[attributeName]
+      if isTimeAttribute(attributeName)
+        !(original == current or current.isSame(original))
       else
-        throw 'isModified was called on a record which has not been cloned'
+        if (original != current) 
+          true
+        else
+          false
+
+    modifiedAttributes: ->
+      return [] unless @_clonedFrom?
+      _.filter @constructor.attributeNames, (name) =>
+        @attributeIsModified(name)
+
+    isModified: ->
+      return false unless @_clonedFrom?
+      @modifiedAttributes().length > 0
 
     updateFromJSON: (jsonData) ->
       data = transformKeys(jsonData, _.camelCase)
@@ -71,13 +88,13 @@ module.exports =
 
     importData: (data, dest) ->
       _.each _.keys(data), (key) =>
-        if /At$/.test(key)
-          if moment(data[key]).isValid()
+        if data[key]?
+          if isTimeAttribute(key) and moment(data[key]).isValid()
             dest[key] = moment(data[key])
           else
-            dest[key] = null
+            dest[key] = data[key]
         else
-          dest[key] = data[key]
+          data[key] = null
         return
 
     # copy camcelCase attributes to snake_case object for rails
@@ -142,6 +159,7 @@ module.exports =
       , ->
 
     saveSuccess: (records) =>
+      @_clonedFrom = undefined
       @processing = false
       records
 

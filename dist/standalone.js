@@ -7,7 +7,7 @@ _ = window._;
 moment = window.moment;
 
 module.exports = BaseModel = (function() {
-  var transformKeys;
+  var isTimeAttribute, transformKeys;
 
   BaseModel.singular = 'undefinedSingular';
 
@@ -90,16 +90,44 @@ module.exports = BaseModel = (function() {
     return newData;
   };
 
-  BaseModel.prototype.isModified = function() {
-    if (this._clonedFrom != null) {
-      return !_.every(this.constructor.attributeNames, (function(_this) {
-        return function(attributeName) {
-          return _this[attributeName] === _this._clonedFrom[attributeName];
-        };
-      })(this));
-    } else {
-      throw 'isModified was called on a record which has not been cloned';
+  isTimeAttribute = function(attributeName) {
+    return /At$/.test(attributeName);
+  };
+
+  BaseModel.prototype.attributeIsModified = function(attributeName) {
+    var current, original;
+    if (this._clonedFrom == null) {
+      return false;
     }
+    original = this._clonedFrom[attributeName];
+    current = this[attributeName];
+    if (isTimeAttribute(attributeName)) {
+      return !(original === current || current.isSame(original));
+    } else {
+      if (original !== current) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+
+  BaseModel.prototype.modifiedAttributes = function() {
+    if (this._clonedFrom == null) {
+      return [];
+    }
+    return _.filter(this.constructor.attributeNames, (function(_this) {
+      return function(name) {
+        return _this.attributeIsModified(name);
+      };
+    })(this));
+  };
+
+  BaseModel.prototype.isModified = function() {
+    if (this._clonedFrom == null) {
+      return false;
+    }
+    return this.modifiedAttributes().length > 0;
   };
 
   BaseModel.prototype.updateFromJSON = function(jsonData) {
@@ -122,14 +150,14 @@ module.exports = BaseModel = (function() {
   BaseModel.prototype.importData = function(data, dest) {
     return _.each(_.keys(data), (function(_this) {
       return function(key) {
-        if (/At$/.test(key)) {
-          if (moment(data[key]).isValid()) {
+        if (data[key] != null) {
+          if (isTimeAttribute(key) && moment(data[key]).isValid()) {
             dest[key] = moment(data[key]);
           } else {
-            dest[key] = null;
+            dest[key] = data[key];
           }
         } else {
-          dest[key] = data[key];
+          data[key] = null;
         }
       };
     })(this));
@@ -218,6 +246,7 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.saveSuccess = function(records) {
+    this._clonedFrom = void 0;
     this.processing = false;
     return records;
   };
