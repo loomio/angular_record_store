@@ -10,6 +10,7 @@ module.exports =
     @searchableFields: []
 
     constructor: (recordsInterface, data, postInitializeData = {}) ->
+      @constructor.attributeNames = []
       @setErrors()
       @processing = false
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)

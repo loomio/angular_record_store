@@ -27,6 +27,7 @@ module.exports = BaseModel = (function() {
     this.saveSuccess = bind(this.saveSuccess, this);
     this.destroy = bind(this.destroy, this);
     this.save = bind(this.save, this);
+    this.constructor.attributeNames = [];
     this.setErrors();
     this.processing = false;
     Object.defineProperty(this, 'recordsInterface', {
