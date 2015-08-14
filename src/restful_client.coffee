@@ -1,4 +1,4 @@
-_ = require('lodash')
+_ = window._
 
 module.exports = ($http, $upload) ->
   class RestfulClient

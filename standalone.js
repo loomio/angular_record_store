@@ -1,242 +1,252 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.AngularRecordStore = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var _,
+var BaseModel, _, moment,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 _ = window._;
 
-module.exports = function() {
-  var BaseModel;
-  return BaseModel = (function() {
-    var transformKeys;
+moment = window.moment;
 
-    BaseModel.singular = 'undefinedSingular';
+module.exports = BaseModel = (function() {
+  var transformKeys;
 
-    BaseModel.plural = 'undefinedPlural';
+  BaseModel.singular = 'undefinedSingular';
 
-    BaseModel.indices = [];
+  BaseModel.plural = 'undefinedPlural';
 
-    BaseModel.attributeNames = [];
+  BaseModel.indices = [];
 
-    BaseModel.searchableFields = [];
+  BaseModel.attributeNames = [];
 
-    function BaseModel(recordsInterface, data, postInitializeData) {
-      if (postInitializeData == null) {
-        postInitializeData = {};
-      }
-      this.saveFailure = bind(this.saveFailure, this);
-      this.saveSuccess = bind(this.saveSuccess, this);
-      this.destroy = bind(this.destroy, this);
-      this.save = bind(this.save, this);
-      this.setErrors();
-      this.processing = false;
-      Object.defineProperty(this, 'recordsInterface', {
-        value: recordsInterface,
-        enumerable: false
-      });
-      Object.defineProperty(this, 'recordStore', {
-        value: recordsInterface.recordStore,
-        enumerable: false
-      });
-      Object.defineProperty(this, 'restfulClient', {
-        value: recordsInterface.restfulClient,
-        enumerable: false
-      });
-      this.initialize(data);
-      _.merge(this, postInitializeData);
-      if ((this.setupViews != null) && (this.id != null)) {
-        this.setupViews();
-      }
+  BaseModel.searchableFields = [];
+
+  function BaseModel(recordsInterface, data, postInitializeData) {
+    if (postInitializeData == null) {
+      postInitializeData = {};
     }
+    this.saveFailure = bind(this.saveFailure, this);
+    this.saveSuccess = bind(this.saveSuccess, this);
+    this.destroy = bind(this.destroy, this);
+    this.save = bind(this.save, this);
+    this.setErrors();
+    this.processing = false;
+    Object.defineProperty(this, 'recordsInterface', {
+      value: recordsInterface,
+      enumerable: false
+    });
+    Object.defineProperty(this, 'recordStore', {
+      value: recordsInterface.recordStore,
+      enumerable: false
+    });
+    Object.defineProperty(this, 'restfulClient', {
+      value: recordsInterface.restfulClient,
+      enumerable: false
+    });
+    this.initialize(data);
+    _.merge(this, postInitializeData);
+    if ((this.setupViews != null) && (this.id != null)) {
+      this.setupViews();
+    }
+  }
 
-    BaseModel.prototype.defaultValues = function() {
-      return {};
-    };
+  BaseModel.prototype.defaultValues = function() {
+    return {};
+  };
 
-    BaseModel.prototype.initialize = function(data) {
-      return this.baseInitialize(data);
-    };
+  BaseModel.prototype.initialize = function(data) {
+    return this.baseInitialize(data);
+  };
 
-    BaseModel.prototype.baseInitialize = function(data) {
-      this.updateFromJSON(this.defaultValues());
-      return this.updateFromJSON(data);
-    };
+  BaseModel.prototype.baseInitialize = function(data) {
+    this.updateFromJSON(this.defaultValues());
+    return this.updateFromJSON(data);
+  };
 
-    BaseModel.prototype.clone = function() {
-      var attrs;
-      attrs = _.reduce(this.constructor.attributeNames, (function(_this) {
-        return function(clone, attr) {
-          clone[attr] = _this[attr];
-          return clone;
-        };
-      })(this), {});
-      return new this.constructor(this.recordsInterface, attrs, {
-        id: this.id,
-        key: this.key
-      });
-    };
+  BaseModel.prototype.clone = function() {
+    var attrs, cloneRecord;
+    attrs = _.reduce(this.constructor.attributeNames, (function(_this) {
+      return function(clone, attr) {
+        clone[attr] = _this[attr];
+        return clone;
+      };
+    })(this), {});
+    cloneRecord = new this.constructor(this.recordsInterface, attrs, {
+      id: this.id,
+      key: this.key
+    });
+    cloneRecord._clonedFrom = this;
+    return cloneRecord;
+  };
 
-    BaseModel.prototype.update = function(data) {
-      return this.updateFromJSON(data);
-    };
+  BaseModel.prototype.update = function(data) {
+    return this.updateFromJSON(data);
+  };
 
-    transformKeys = function(data, transform) {
-      var newData;
-      newData = {};
-      return _.each(_.keys(data), function(key) {
-        newData[_.transform(key)] = data[key];
-      });
-    };
+  transformKeys = function(data, transformFn) {
+    var newData;
+    newData = {};
+    _.each(_.keys(data), function(key) {
+      newData[transformFn(key)] = data[key];
+    });
+    return newData;
+  };
 
-    BaseModel.prototype.isModified = function() {
-      return false;
-    };
-
-    BaseModel.prototype.updateFromJSON = function(jsonData) {
-      var data;
-      data = transformKeys(jsonData, _.camelCase);
-      this.scrapeAttributeNames(data);
-      return this.importData(data, this);
-    };
-
-    BaseModel.prototype.scrapeAttributeNames = function(data) {
-      return _.each(_.keys(data), (function(_this) {
-        return function(key) {
-          if (!_.contains(_this.constructor.attributeNames, key)) {
-            _this.constructor.attributeNames.push(key);
-          }
-        };
-      })(this));
-    };
-
-    BaseModel.prototype.importData = function(data, dest) {
-      return _.each(_.keys(data), (function(_this) {
-        return function(key) {
-          if (/At$/.test(key)) {
-            if (moment(data[key]).isValid()) {
-              dest[key] = moment(data[key]);
-            } else {
-              dest[key] = null;
-            }
-          } else {
-            dest[key] = data[key];
-          }
-        };
-      })(this));
-    };
-
-    BaseModel.prototype.serialize = function() {
-      return this.baseSerialize();
-    };
-
-    BaseModel.prototype.baseSerialize = function() {
-      var data, paramKey, wrapper;
-      wrapper = {};
-      data = {};
-      paramKey = _.snakeCase(this.constructor.singular);
-      _.each(window.Loomio.permittedParams[paramKey], (function(_this) {
+  BaseModel.prototype.isModified = function() {
+    if (this._clonedFrom != null) {
+      return !_.every(this.constructor.attributeNames, (function(_this) {
         return function(attributeName) {
-          data[_.snakeCase(attributeName)] = _this[_.camelCase(attributeName)];
-          return true;
+          return _this[attributeName] === _this._clonedFrom[attributeName];
         };
       })(this));
-      wrapper[paramKey] = data;
-      return wrapper;
-    };
+    } else {
+      throw 'isModified was called on a record which has not been cloned';
+    }
+  };
 
-    BaseModel.prototype.addView = function(collectionName, viewName) {
-      return this.recordStore[collectionName].collection.addDynamicView(this.id + "-" + viewName);
-    };
+  BaseModel.prototype.updateFromJSON = function(jsonData) {
+    var data;
+    data = transformKeys(jsonData, _.camelCase);
+    this.scrapeAttributeNames(data);
+    return this.importData(data, this);
+  };
 
-    BaseModel.prototype.setupViews = function() {};
-
-    BaseModel.prototype.setupView = function(view, sort, desc) {
-      var idOption, viewName;
-      viewName = view + "View";
-      idOption = {};
-      idOption[this.constructor.singular + "Id"] = this.id;
-      this[viewName] = this.recordStore[view].collection.addDynamicView(this.viewName());
-      this[viewName].applyFind(idOption);
-      this[viewName].applyFind({
-        id: {
-          $gt: 0
+  BaseModel.prototype.scrapeAttributeNames = function(data) {
+    return _.each(_.keys(data), (function(_this) {
+      return function(key) {
+        if (!_.contains(_this.constructor.attributeNames, key)) {
+          _this.constructor.attributeNames.push(key);
         }
-      });
-      return this[viewName].applySimpleSort(sort || 'createdAt', desc);
-    };
+      };
+    })(this));
+  };
 
-    BaseModel.prototype.translationOptions = function() {};
+  BaseModel.prototype.importData = function(data, dest) {
+    return _.each(_.keys(data), (function(_this) {
+      return function(key) {
+        if (/At$/.test(key)) {
+          if (moment(data[key]).isValid()) {
+            dest[key] = moment(data[key]);
+          } else {
+            dest[key] = null;
+          }
+        } else {
+          dest[key] = data[key];
+        }
+      };
+    })(this));
+  };
 
-    BaseModel.prototype.viewName = function() {
-      return "" + this.constructor.plural + this.id;
-    };
+  BaseModel.prototype.serialize = function() {
+    return this.baseSerialize();
+  };
 
-    BaseModel.prototype.isNew = function() {
-      return this.id == null;
-    };
+  BaseModel.prototype.baseSerialize = function() {
+    var data, paramKey, wrapper;
+    wrapper = {};
+    data = {};
+    paramKey = _.snakeCase(this.constructor.singular);
+    _.each(window.Loomio.permittedParams[paramKey], (function(_this) {
+      return function(attributeName) {
+        data[_.snakeCase(attributeName)] = _this[_.camelCase(attributeName)];
+        return true;
+      };
+    })(this));
+    wrapper[paramKey] = data;
+    return wrapper;
+  };
 
-    BaseModel.prototype.keyOrId = function() {
-      if (this.key != null) {
-        return this.key;
-      } else {
-        return this.id;
+  BaseModel.prototype.addView = function(collectionName, viewName) {
+    return this.recordStore[collectionName].collection.addDynamicView(this.id + "-" + viewName);
+  };
+
+  BaseModel.prototype.setupViews = function() {};
+
+  BaseModel.prototype.setupView = function(view, sort, desc) {
+    var idOption, viewName;
+    viewName = view + "View";
+    idOption = {};
+    idOption[this.constructor.singular + "Id"] = this.id;
+    this[viewName] = this.recordStore[view].collection.addDynamicView(this.viewName());
+    this[viewName].applyFind(idOption);
+    this[viewName].applyFind({
+      id: {
+        $gt: 0
       }
-    };
+    });
+    return this[viewName].applySimpleSort(sort || 'createdAt', desc);
+  };
 
-    BaseModel.prototype.save = function() {
-      this.setErrors();
-      if (this.processing) {
-        console.log("save returned, already processing:", this);
-        return;
-      }
-      this.processing = true;
-      if (this.isNew()) {
-        return this.restfulClient.create(this.serialize()).then(this.saveSuccess, this.saveFailure);
-      } else {
-        return this.restfulClient.update(this.keyOrId(), this.serialize()).then(this.saveSuccess, this.saveFailure);
-      }
-    };
+  BaseModel.prototype.translationOptions = function() {};
 
-    BaseModel.prototype.destroy = function() {
-      this.processing = true;
-      return this.restfulClient.destroy(this.keyOrId()).then((function(_this) {
-        return function() {
-          _this.processing = false;
-          return _this.recordsInterface.remove(_this);
-        };
-      })(this), function() {});
-    };
+  BaseModel.prototype.viewName = function() {
+    return "" + this.constructor.plural + this.id;
+  };
 
-    BaseModel.prototype.saveSuccess = function(records) {
-      this.processing = false;
-      return records;
-    };
+  BaseModel.prototype.isNew = function() {
+    return this.id == null;
+  };
 
-    BaseModel.prototype.saveFailure = function(errors) {
-      this.processing = false;
-      this.setErrors(errors);
-      throw errors;
-    };
+  BaseModel.prototype.keyOrId = function() {
+    if (this.key != null) {
+      return this.key;
+    } else {
+      return this.id;
+    }
+  };
 
-    BaseModel.prototype.setErrors = function(errorList) {
-      if (errorList == null) {
-        errorList = [];
-      }
-      this.errors = {};
-      return _.each(errorList, (function(_this) {
-        return function(errors, key) {
-          return _this.errors[_.camelCase(key)] = errors;
-        };
-      })(this));
-    };
+  BaseModel.prototype.save = function() {
+    this.setErrors();
+    if (this.processing) {
+      console.log("save returned, already processing:", this);
+      return;
+    }
+    this.processing = true;
+    if (this.isNew()) {
+      return this.restfulClient.create(this.serialize()).then(this.saveSuccess, this.saveFailure);
+    } else {
+      return this.restfulClient.update(this.keyOrId(), this.serialize()).then(this.saveSuccess, this.saveFailure);
+    }
+  };
 
-    BaseModel.prototype.isValid = function() {
-      return this.errors.length > 0;
-    };
+  BaseModel.prototype.destroy = function() {
+    this.processing = true;
+    return this.restfulClient.destroy(this.keyOrId()).then((function(_this) {
+      return function() {
+        _this.processing = false;
+        return _this.recordsInterface.remove(_this);
+      };
+    })(this), function() {});
+  };
 
-    return BaseModel;
+  BaseModel.prototype.saveSuccess = function(records) {
+    this.processing = false;
+    return records;
+  };
 
-  })();
-};
+  BaseModel.prototype.saveFailure = function(errors) {
+    this.processing = false;
+    this.setErrors(errors);
+    throw errors;
+  };
+
+  BaseModel.prototype.setErrors = function(errorList) {
+    if (errorList == null) {
+      errorList = [];
+    }
+    this.errors = {};
+    return _.each(errorList, (function(_this) {
+      return function(errors, key) {
+        return _this.errors[_.camelCase(key)] = errors;
+      };
+    })(this));
+  };
+
+  BaseModel.prototype.isValid = function() {
+    return this.errors.length > 0;
+  };
+
+  return BaseModel;
+
+})();
 
 
 },{}],2:[function(require,module,exports){
@@ -416,54 +426,58 @@ module.exports = function(RestfulClient, $q) {
 
 
 },{}],3:[function(require,module,exports){
-var _;
-
-_ = window._;
-
-module.exports = function() {
-  var RecordStore;
-  return RecordStore = (function() {
-    function RecordStore(db) {
-      this.db = db;
-      this.collectionNames = [];
-    }
-
-    RecordStore.prototype.addRecordsInterface = function(recordsInterfaceClass) {
-      var name, recordsInterface;
-      recordsInterface = new recordsInterfaceClass(this);
-      name = recordsInterface.model.plural;
-      this[_.camelCase(name)] = recordsInterface;
-      return this.collectionNames.push(name);
-    };
-
-    RecordStore.prototype["import"] = function(data) {
-      _.each(this.collectionNames, (function(_this) {
-        return function(name) {
-          var camelName, snakeName;
-          snakeName = _.snakeCase(name);
-          camelName = _.camelCase(name);
-          if (data[snakeName] != null) {
-            return _.each(data[snakeName], function(recordData) {
-              return _this[camelName]["import"](recordData);
-            });
-          }
-        };
-      })(this));
-      return data;
-    };
-
-    return RecordStore;
-
-  })();
+module.exports = {
+  RecordStore: require('./record_store.coffee'),
+  BaseModel: require('./base_model.coffee'),
+  BaseRecordsInterfaceFn: require('./base_records_interface.coffee'),
+  RestfulClientFn: require('./restful_client.coffee')
 };
 
 
-},{}],4:[function(require,module,exports){
-var $, _;
+},{"./base_model.coffee":1,"./base_records_interface.coffee":2,"./record_store.coffee":4,"./restful_client.coffee":5}],4:[function(require,module,exports){
+var RecordStore, _;
 
 _ = window._;
 
-$ = window.jQuery;
+module.exports = RecordStore = (function() {
+  function RecordStore(db) {
+    this.db = db;
+    this.collectionNames = [];
+  }
+
+  RecordStore.prototype.addRecordsInterface = function(recordsInterfaceClass) {
+    var name, recordsInterface;
+    recordsInterface = new recordsInterfaceClass(this);
+    name = recordsInterface.model.plural;
+    this[_.camelCase(name)] = recordsInterface;
+    return this.collectionNames.push(name);
+  };
+
+  RecordStore.prototype["import"] = function(data) {
+    _.each(this.collectionNames, (function(_this) {
+      return function(name) {
+        var camelName, snakeName;
+        snakeName = _.snakeCase(name);
+        camelName = _.camelCase(name);
+        if (data[snakeName] != null) {
+          return _.each(data[snakeName], function(recordData) {
+            return _this[camelName]["import"](recordData);
+          });
+        }
+      };
+    })(this));
+    return data;
+  };
+
+  return RecordStore;
+
+})();
+
+
+},{}],5:[function(require,module,exports){
+var _;
+
+_ = window._;
 
 module.exports = function($http, $upload) {
   var RestfulClient;
@@ -483,10 +497,16 @@ module.exports = function($http, $upload) {
     }
 
     RestfulClient.prototype.buildUrl = function(url, params) {
+      var encodeParams;
       if (params == null) {
         return url;
       }
-      return url + "?" + $.param(params);
+      encodeParams = function(params) {
+        return _.map(_.keys(params), function(key) {
+          return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+        }).join('&');
+      };
+      return url + "?" + encodeParams(params);
     };
 
     RestfulClient.prototype.collectionPath = function() {
@@ -561,14 +581,5 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],5:[function(require,module,exports){
-module.exports = {
-  RecordStore: require('./record_store.coffee'),
-  BaseModel: require('./base_model.coffee'),
-  BaseRecordsInterface: require('./base_records_interface.coffee'),
-  RestfulClient: require('./restful_client.coffee')
-};
-
-
-},{"./base_model.coffee":1,"./base_records_interface.coffee":2,"./record_store.coffee":3,"./restful_client.coffee":4}]},{},[5])(5)
+},{}]},{},[3])(3)
 });

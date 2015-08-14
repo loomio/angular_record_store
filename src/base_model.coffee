@@ -1,5 +1,5 @@
-_ = require('lodash')
-moment = require('moment')
+_ = window._
+moment = window.moment
 
 module.exports =
   class BaseModel
@@ -35,7 +35,7 @@ module.exports =
         clone
       , {}
       cloneRecord = new @constructor(@recordsInterface, attrs, { id: @id, key: @key })
-      cloneRecord.cloneSource = @
+      cloneRecord._clonedFrom = @
       cloneRecord
 
     update: (data) ->
@@ -51,9 +51,11 @@ module.exports =
       newData
 
     isModified: ->
-      if @cloneSource?
+      if @_clonedFrom?
+        not _.every @constructor.attributeNames, (attributeName) =>
+          @[attributeName] == @_clonedFrom[attributeName]
       else
-        false
+        throw 'isModified was called on a record which has not been cloned'
 
     updateFromJSON: (jsonData) ->
       data = transformKeys(jsonData, _.camelCase)

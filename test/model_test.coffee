@@ -1,4 +1,5 @@
-_ = require('lodash')
+_ = window._ = require('lodash')
+moment = window.moment = require('moment')
 angular = require('angular')
 mocks = require('angular-mocks/angular-mocks')
 moment = require('moment')
@@ -13,7 +14,7 @@ DogModel = null
 BaseRecordsInterface = null
 dogRecordsInterface = null
 
-describe 'base model behaviuor', ->
+describe 'model behaviour', ->
   beforeEach ->
     inject ($httpBackend, $q) ->
 
@@ -30,6 +31,7 @@ describe 'base model behaviuor', ->
   # serialize
   # setupViews is called
   # setErrors sets errors
+  # check if we need the postInitalize that clone uses
 
   describe 'new', ->
     it 'creates new record with default values', ->
@@ -47,15 +49,14 @@ describe 'base model behaviuor', ->
       _.each record.constructor.attributeNames, (attributeName) ->
         expect(cloneRecord[attributeName]).toEqual(record[attributeName])
 
+    it 'isModified is false when not modified', ->
+      cloneRecord = record.clone()
+      expect(cloneRecord.isModified()).toBe(false)
 
-    #it 'isModified is false when not modified', ->
-      #cloneRecord = record.clone()
-      #expect(cloneRecord.isModified()).toBe(false)
-
-    #it 'isModfied is true when attribute is changed', ->
-      #cloneRecord = record.clone()
-      #cloneRecord.isFluffy = false
-      #expect(cloneRecord.isModified()).toBe(true)
+    it 'isModfied is true when attribute is changed', ->
+      cloneRecord = record.clone()
+      cloneRecord.isFluffy = false
+      expect(cloneRecord.isModified()).toBe(true)
 
   describe 'updateFromJSON', ->
     record = null
