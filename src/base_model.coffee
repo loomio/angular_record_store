@@ -6,11 +6,11 @@ module.exports =
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'
     @indices: []
-    @attributeNames: []
+    @attributeNames: null
     @searchableFields: []
 
     constructor: (recordsInterface, data, postInitializeData = {}) ->
-      @constructor.attributeNames = []
+      @constructor.attributeNames = [] unless @constructor.attributeNames?
       @setErrors()
       @processing = false
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
