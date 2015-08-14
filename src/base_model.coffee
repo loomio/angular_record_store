@@ -1,58 +1,45 @@
 _ = window._
 moment = window.moment
 
+isTimeAttribute = (attributeName) ->
+  /At$/.test(attributeName)
+
 module.exports =
   class BaseModel
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'
     @indices: []
-    @attributeNames: null
     @searchableFields: []
 
-    constructor: (recordsInterface, data, postInitializeData = {}) ->
-      @constructor.attributeNames = [] unless @constructor.attributeNames?
-      @setErrors()
+    constructor: (recordsInterface, attributes = {}) ->
+      @inCollection = false
       @processing = false
+      @attributeNames = []
+      @setErrors()
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
       Object.defineProperty(@, 'restfulClient', value: recordsInterface.restfulClient, enumerable: false)
-      @initialize(data)
-      _.merge @, postInitializeData
-      @setupViews() if @setupViews? and @id?
+
+      @update(@defaultValues())
+      @update(attributes)
+
+      @buildRelationships() if @relationships?
 
     defaultValues: ->
       {}
 
-    initialize: (data) ->
-      @baseInitialize(data)
-
-    baseInitialize: (data) ->
-      @updateFromJSON(@defaultValues())
-      @updateFromJSON(data)
-
     clone: ->
-      attrs = _.reduce @constructor.attributeNames, (clone, attr) =>
+      cloneAttributes = _.transform @attributeNames, (clone, attr) =>
         clone[attr] = @[attr]
-        clone
-      , {}
+        true
       cloneRecord = new @constructor(@recordsInterface, attrs, { id: @id, key: @key })
       cloneRecord._clonedFrom = @
       cloneRecord
 
-    update: (data) ->
-      @updateFromJSON(data)
-
-    # copy rails snake_case hash, into camelCase object properties
-    # also initialize attributes that end in _at or are listed as moments
-    transformKeys = (data, transformFn) ->
-      newData = {}
-      _.each _.keys(data), (key) ->
-        newData[transformFn(key)] = data[key]
-        return
-      newData
-
-    isTimeAttribute = (attributeName) ->
-      /At$/.test(attributeName)
+    update: (attributes) ->
+      @attributeNames = _.uniq(@attributeNames, _.keys(attributes))
+      _.assign(@, attributes)
+      @recordsInterface.collection.update(@) if @inCollection
 
     attributeIsModified: (attributeName) ->
       return false unless @_clonedFrom?
@@ -65,37 +52,13 @@ module.exports =
 
     modifiedAttributes: ->
       return [] unless @_clonedFrom?
-      _.filter @constructor.attributeNames, (name) =>
+      _.filter @attributeNames, (name) =>
         @attributeIsModified(name)
 
     isModified: ->
       return false unless @_clonedFrom?
       @modifiedAttributes().length > 0
 
-    updateFromJSON: (jsonData) ->
-      data = transformKeys(jsonData, _.camelCase)
-
-      @scrapeAttributeNames(data)
-      @importData(data, @)
-
-    scrapeAttributeNames: (data) ->
-      _.each _.keys(data), (key) =>
-        unless _.contains @constructor.attributeNames, key
-          @constructor.attributeNames.push key
-        return
-
-    importData: (data, dest) ->
-      _.each _.keys(data), (key) =>
-        if data[key]?
-          if isTimeAttribute(key) and moment(data[key]).isValid()
-            dest[key] = moment(data[key])
-          else
-            dest[key] = data[key]
-        else
-          data[key] = null
-        return
-
-    # copy camcelCase attributes to snake_case object for rails
     serialize: ->
       @baseSerialize()
 
@@ -109,24 +72,38 @@ module.exports =
       wrapper[paramKey] = data
       wrapper
 
-    addView: (collectionName, viewName) ->
-      @recordStore[collectionName].collection.addDynamicView("#{@id}-#{viewName}")
+    relationships: ->
 
-    setupViews: ->
+    buildRelationships: ->
+      @views = {}
+      @relationships()
 
-    setupView: (view, sort, desc) ->
-      viewName = "#{view}View"
-      idOption = {}
-      idOption["#{@constructor.singular}Id"] = @id
+    hasMany: (name, userArgs) ->
+      defaults =
+        from: name
+        with:  @constructor.singular+'Id'
+        of: 'id'
 
-      @[viewName] = @recordStore[view].collection.addDynamicView(@viewName())
-      @[viewName].applyFind(idOption)
-      @[viewName].applyFind(id: {$gt: 0})
-      @[viewName].applySimpleSort(sort or 'createdAt', desc)
+      args = _.assign defaults, userArgs
+      viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
+
+      # create the view which references the records
+      @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
+      @views[viewName].applyFind("#{args.with}": @[args.of])
+      @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
+      @views[viewName]
+
+      # create fn to retrieve records from the view
+      @[name] = =>
+        @views[viewName].data()
+
+    belongsTo: (name, args = {from: null, by: null}) =>
+      @[name] = =>
+        console.log 'args', args
+        console.log 'recordStore', @recordStore
+        @recordStore[args.from].find(args.by)
 
     translationOptions: ->
-
-    viewName: -> "#{@constructor.plural}#{@id}"
 
     isNew: ->
       not @id?
@@ -157,6 +134,7 @@ module.exports =
       , ->
 
     saveSuccess: (records) =>
+      # TODO!!!!!! collection update(@)
       @_clonedFrom = undefined
       @processing = false
       records
