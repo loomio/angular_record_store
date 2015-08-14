@@ -5,8 +5,8 @@
   "main": "index.coffee",
   "scripts": {
     "test": "karma start",
-    "build-watch": "watchify src/index.coffee -o standalone.js -v -s AngularRecordStore",
-    "build": "browserify --standalone AngularRecordStore src/index.coffee > standalone.js",
+    "build-watch": "watchify src/index.coffee -o dist/standalone.js -v -s AngularRecordStore",
+    "build": "browserify --standalone AngularRecordStore src/index.coffee > dist/standalone.js",
     "prepublish": "npm run build"
   },
   "browserify": {
