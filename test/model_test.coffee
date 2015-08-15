@@ -113,7 +113,6 @@ describe 'model behaviour', ->
       it "momentizes attrbutes ending in _at", ->
         expect(dog.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
 
-
   describe 'clone', ->
     dog = null
     cloneDog = null

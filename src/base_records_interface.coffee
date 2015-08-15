@@ -29,12 +29,12 @@ module.exports = (RestfulClient, $q) ->
     baseConstructor: (recordStore) ->
       @recordStore = recordStore
       @collection = @recordStore.db.addCollection(@model.plural, {indices: @model.indices})
-      @restfulClient = new RestfulClient(@model.plural)
+      @remote = new RestfulClient(@model.plural)
 
-      @restfulClient.onSuccess = (response) =>
+      @remote.onSuccess = (response) =>
         @recordStore.import(response.data)
 
-      @restfulClient.onFailure = (response) ->
+      @remote.onFailure = (response) ->
         console.log('request failure!', response)
         throw response
 
@@ -47,6 +47,12 @@ module.exports = (RestfulClient, $q) ->
       record.inCollection = true
       record
 
+    update: (record) ->
+      @collection.update(record)
+
+    remove: (record) ->
+      @collection.remove(record)
+
     importJSON: (json) ->
       @import(parseJSON(json))
 
@@ -58,13 +64,6 @@ module.exports = (RestfulClient, $q) ->
         record = @create(attributes)
       record
 
-    remove: (record) ->
-      record.inCollection = false
-      @collection.remove(record)
-
-    destroy: (id) ->
-      @restfulClient.destroy(id)
-
     findOrFetchById: (id) ->
       deferred = $q.defer()
       promise = @fetchById(id).then => @find(id)
@@ -75,15 +74,6 @@ module.exports = (RestfulClient, $q) ->
         deferred.resolve(promise)
 
       deferred.promise
-
-    fetchById: (id) ->
-      @restfulClient.getMember(id)
-
-    fetch: ({params, path}) ->
-      if path?
-        @restfulClient.get(path, params)
-      else
-        @restfulClient.getCollection(params)
 
     find: (q) ->
       if q == null or q == undefined

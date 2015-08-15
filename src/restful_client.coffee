@@ -9,6 +9,7 @@ module.exports = ($http, $upload) ->
     onFailure: (response) -> throw response
 
     constructor: (resourcePlural) ->
+      @processing = []
       @resourcePlural = _.snakeCase(resourcePlural)
 
     buildUrl: (url, params) ->
@@ -33,6 +34,15 @@ module.exports = ($http, $upload) ->
 
     customPath: (path) ->
       "#{@apiPrefix}/#{@resourcePlural}/#{path}"
+
+    fetchById: (id) ->
+      @getMember(id)
+
+    fetch: ({params, path}) ->
+      if path?
+        @get(path, params)
+      else
+        @getCollection(params)
 
     get: (path, params) ->
       url = @buildUrl(@customPath(path), params)

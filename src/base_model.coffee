@@ -13,12 +13,12 @@ module.exports =
 
     constructor: (recordsInterface, attributes = {}) ->
       @inCollection = false
-      @processing = false
+      @processing = false # not returning/throwing on already processing rn
       @attributeNames = []
       @setErrors()
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
-      Object.defineProperty(@, 'restfulClient', value: recordsInterface.restfulClient, enumerable: false)
+      Object.defineProperty(@, 'remote', value: recordsInterface.remote, enumerable: false)
 
       @update(@defaultValues())
       @update(attributes)
@@ -33,17 +33,19 @@ module.exports =
         clone[attr] = @[attr]
         true
       cloneRecord = new @constructor(@recordsInterface, cloneAttributes)
-      cloneRecord._clonedFrom = @
+      cloneRecord.clonedFrom = @
       cloneRecord
 
     update: (attributes) ->
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
-      @recordsInterface.collection.update(@) if @inCollection
+
+      # calling update on the collection just updates views/indexes
+      @recordsInterface.update(@) if @inCollection
 
     attributeIsModified: (attributeName) ->
-      return false unless @_clonedFrom?
-      original = @_clonedFrom[attributeName]
+      return false unless @clonedFrom?
+      original = @clonedFrom[attributeName]
       current = @[attributeName]
       if isTimeAttribute(attributeName)
         !(original == current or current.isSame(original))
@@ -51,12 +53,12 @@ module.exports =
         original != current
 
     modifiedAttributes: ->
-      return [] unless @_clonedFrom?
+      return [] unless @clonedFrom?
       _.filter @attributeNames, (name) =>
         @attributeIsModified(name)
 
     isModified: ->
-      return false unless @_clonedFrom?
+      return false unless @clonedFrom?
       @modifiedAttributes().length > 0
 
     serialize: ->
@@ -88,7 +90,6 @@ module.exports =
       viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
 
       # create the view which references the records
-      #console.log 'heyyy defaults, userArgs, args, recordStore, collection', defaults, userArgs, args, @recordStore[args.from]
       @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
       @views[viewName].applyFind("#{args.with}": @[args.of])
       @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
@@ -113,35 +114,33 @@ module.exports =
       else
         @id
 
-    save: =>
-      @setErrors()
-      if @processing
-        console.log "save returned, already processing:", @
-        return
-
-      @processing = true
-      if @isNew()
-        @restfulClient.create(@serialize()).then(@saveSuccess, @saveFailure)
-      else
-        @restfulClient.update(@keyOrId(), @serialize()).then(@saveSuccess, @saveFailure)
-
     destroy: =>
-      @processing = true
-      @restfulClient.destroy(@keyOrId()).then =>
+      @recordsInterface.remove(@) if @inCollection
+      unless @isNew()
+        @processing = true
+        @remote.destroy(@keyOrId()).then =>
+          @processing = false
+
+
+    save: =>
+      saveSuccess = (records) =>
         @processing = false
-        @recordsInterface.remove(@)
-      , ->
+        @clonedFrom = undefined
+        records
 
-    saveSuccess: (records) =>
-      # TODO!!!!!! collection update(@)
-      @_clonedFrom = undefined
-      @processing = false
-      records
+      saveFailure = (errors) =>
+        @processing = false
+        @setErrors errors
+        throw errors
 
-    saveFailure: (errors) =>
-      @processing = false
-      @setErrors errors
-      throw errors
+      @processing = true
+      if @isNew
+        @remote.create(@serialize()).then(saveSuccess, saveFailure)
+      else
+        @remote.update(@keyOrId(), @serialize()).then(saveSuccess, saveFailure)
+
+    clearErrors: ->
+      @errors = {}
 
     setErrors: (errorList = []) ->
       @errors = {}
