@@ -145,6 +145,9 @@ module.exports = BaseModel = (function() {
       return function() {
         var obj, viewName;
         viewName = _this.constructor.plural + "." + name + "." + (Math.random());
+        if (_this.recordStore[args.from] == null) {
+          console.log(args.from);
+        }
         _this.views[viewName] = _this.recordStore[args.from].collection.addDynamicView(name);
         _this.views[viewName].applyFind((
           obj = {},
@@ -164,6 +167,9 @@ module.exports = BaseModel = (function() {
       return function() {
         return _this[name] = function() {
           var obj;
+          if (_this.recordStore[args.from] == null) {
+            console.log(args.from);
+          }
           return _this.recordStore[args.from].where((
             obj = {},
             obj["" + args["with"]] = _this[args.of],
@@ -188,6 +194,9 @@ module.exports = BaseModel = (function() {
     args = _.assign(defaults, userArgs);
     return this[name] = (function(_this) {
       return function() {
+        if (_this.recordStore[args.from] == null) {
+          console.log(args.from);
+        }
         return _this.recordStore[args.from].find(_this[args.by]);
       };
     })(this);
