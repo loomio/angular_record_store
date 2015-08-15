@@ -32,12 +32,12 @@ module.exports =
       cloneAttributes = _.transform @attributeNames, (clone, attr) =>
         clone[attr] = @[attr]
         true
-      cloneRecord = new @constructor(@recordsInterface, attrs, { id: @id, key: @key })
+      cloneRecord = new @constructor(@recordsInterface, cloneAttributes)
       cloneRecord._clonedFrom = @
       cloneRecord
 
     update: (attributes) ->
-      @attributeNames = _.uniq(@attributeNames, _.keys(attributes))
+      @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
       @recordsInterface.collection.update(@) if @inCollection
 
@@ -88,6 +88,7 @@ module.exports =
       viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
 
       # create the view which references the records
+      #console.log 'heyyy defaults, userArgs, args, recordStore, collection', defaults, userArgs, args, @recordStore[args.from]
       @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
       @views[viewName].applyFind("#{args.with}": @[args.of])
       @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
@@ -99,9 +100,7 @@ module.exports =
 
     belongsTo: (name, args = {from: null, by: null}) =>
       @[name] = =>
-        console.log 'args', args
-        console.log 'recordStore', @recordStore
-        @recordStore[args.from].find(args.by)
+        @recordStore[args.from].find(@[args.by])
 
     translationOptions: ->
 

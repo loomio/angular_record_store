@@ -71,47 +71,65 @@ describe 'model behaviour', ->
   # setErrors sets errors
   # check if we need the postInitalize that clone uses
 
-  #describe 'new', ->
-    #it 'creates new record with default values', ->
-      #record = new DogModel(recordStore, {})
-      #expect(record.isFluffy).toBe(true)
+  describe 'recordsInterface', ->
+    describe 'build', ->
+      beforeEach ->
+        dog = recordStore.doggies.build(id: 42)
 
-  #describe 'clone', ->
-    #record = null
-    #beforeEach ->
-      #record = new DogModel(dogRecordsInterface)
+      it 'builds record with default values', ->
+        expect(dog.isFluffy).toBe(true)
 
-    #it 'creates a clone of the record with the same values', ->
-      #cloneRecord = record.clone()
+      it 'does not insert into collection', ->
+        expect(dog.inCollection).toBe(false)
+        expect(recordStore.doggies.find(42)).toBe(null)
 
-      #_.each record.constructor.attributeNames, (attributeName) ->
-        #expect(cloneRecord[attributeName]).toEqual(record[attributeName])
+      it 'overrides defaults and allows new properties', ->
+        dog = recordStore.doggies.build(isFluffy: false, smellsBad: true)
+        expect(dog.isFluffy).toBe(false)
+        expect(dog.smellsBad).toBe(true)
 
-    #it 'isModified is false when not modified', ->
-      #cloneRecord = record.clone()
-      #expect(cloneRecord.isModified()).toBe(false)
+    describe 'create', ->
+      beforeEach ->
+        dog = recordStore.doggies.create(id: 43)
 
-    #it 'isModfied is true when attribute is changed', ->
-      #cloneRecord = record.clone()
-      #cloneRecord.isFluffy = false
-      #expect(cloneRecord.isModified()).toBe(true)
+      it 'creates record with default values', ->
+        expect(dog.isFluffy).toBe(true)
 
-  #describe 'updateFromJSON', ->
-    #record = null
+      it 'inserts it into the record store', ->
+        expect(dog.isFluffy).toBe(true)
+        expect(recordStore.doggies.find(43)).toBe(dog)
 
-    #beforeEach ->
-      #record = new DogModel(dogRecordsInterface, {})
+    describe 'importJSON', ->
+      dog = null
 
-    #it 'assigns attributes snake -> camel case', ->
-      #json = {is_fluffy: false, some_attr_name: 'aValue'}
+      beforeEach ->
+        json = {is_fluffy: false, some_attr_name: 'aValue', created_at: "2015-08-13T00:00:00Z"}
+        dog = recordStore.doggies.importJSON(json)
 
-      #record.updateFromJSON(json)
+      it 'assigns attributes snake -> camel case', ->
+        expect(dog.isFluffy).toBe(false)
+        expect(dog.someAttrName).toBe('aValue')
 
-      #expect(record.isFluffy).toBe(false)
-      #expect(record.someAttrName).toBe('aValue')
+      it "momentizes attrbutes ending in _at", ->
+        expect(dog.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
 
-    #it "momentizes attrbutes ending in _at", ->
-      #json = {created_at: "2015-08-13T00:00:00Z"}
-      #record.updateFromJSON(json)
-      #expect(record.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
+
+  describe 'clone', ->
+    dog = null
+    cloneDog = null
+
+    beforeEach ->
+      dog = recordStore.doggies.create(id: 1, name: 'barf')
+      cloneDog = dog.clone()
+
+    it 'creates a clone of the record with the same values', ->
+      _.each dog.attributeNames, (attributeName) ->
+        expect(cloneDog[attributeName]).toEqual(dog[attributeName])
+
+    it 'isModified is false when not modified', ->
+      expect(cloneDog.isModified()).toBe(false)
+
+    it 'isModfied is true when attribute is changed', ->
+      cloneDog.isFluffy = false
+      expect(cloneDog.isModified()).toBe(true)
 

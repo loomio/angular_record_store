@@ -7,7 +7,7 @@ transformKeys = (attributes, transformFn) ->
 
 parseJSON = (json) ->
   attributes = transformKeys(json, _.camelCase)
-  _.each _.names(attributes), (name) ->
+  _.each _.keys(attributes), (name) ->
     if attributes[name]?
       if isTimeAttribute(name) and moment(attributes[name]).isValid()
         attributes[name] = moment(attributes[name])
