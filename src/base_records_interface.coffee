@@ -32,7 +32,7 @@ module.exports = (RestfulClient, $q) ->
       @remote = new RestfulClient(@model.apiEndPoint or @model.plural)
 
       @remote.onSuccess = (response) =>
-        @recordStore.importJSON(response.data)
+        @recordStore.import(response.data)
 
       @remote.onFailure = (response) ->
         console.log('request failure!', response)

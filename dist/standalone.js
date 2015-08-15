@@ -319,7 +319,7 @@ module.exports = function(RestfulClient, $q) {
       this.remote = new RestfulClient(this.model.apiEndPoint || this.model.plural);
       this.remote.onSuccess = (function(_this) {
         return function(response) {
-          return _this.recordStore.importJSON(response.data);
+          return _this.recordStore["import"](response.data);
         };
       })(this);
       return this.remote.onFailure = function(response) {
