@@ -20,10 +20,12 @@ module.exports =
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
       Object.defineProperty(@, 'remote', value: recordsInterface.remote, enumerable: false)
 
+
       @update(@defaultValues())
       @update(attributes)
 
       @buildRelationships() if @relationships?
+
 
     defaultValues: ->
       {}
@@ -85,21 +87,41 @@ module.exports =
         from: name
         with:  @constructor.singular+'Id'
         of: 'id'
+        dynamicView: true
 
       args = _.assign defaults, userArgs
-      viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
 
-      # create the view which references the records
-      @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
-      @views[viewName].applyFind("#{args.with}": @[args.of])
-      @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
-      @views[viewName]
+      # sets up a dynamic view which will be kept updated as matching elements are added to the collection
+      addDynamicView = =>
+        viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
 
-      # create fn to retrieve records from the view
-      @[name] = =>
-        @views[viewName].data()
+        # create the view which references the records
+        @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
+        @views[viewName].applyFind("#{args.with}": @[args.of])
+        @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
+        @views[viewName]
 
-    belongsTo: (name, args = {from: null, by: null}) =>
+        # create fn to retrieve records from the view
+        @[name] = =>
+          @views[viewName].data()
+
+      # adds a simple Records.collection.where with no db overhead
+      addFindMethod = =>
+        @[name] = =>
+          @recordStore[args.from].where("#{args.with}": @[args.of])
+
+      if args.dynamicView
+        addDynamicView()
+      else
+        addFindMethod()
+
+    belongsTo: (name, userArgs) =>
+      defaults =
+        from: name+'s'
+        by: name+'Id'
+
+      args = _.assign defaults, userArgs
+
       @[name] = =>
         @recordStore[args.from].find(@[args.by])
 

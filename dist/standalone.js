@@ -1,37 +1,35 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.AngularRecordStore = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var BaseModel, _, moment,
+var BaseModel, _, isTimeAttribute, moment,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 _ = window._;
 
 moment = window.moment;
 
-module.exports = BaseModel = (function() {
-  var isTimeAttribute, transformKeys;
+isTimeAttribute = function(attributeName) {
+  return /At$/.test(attributeName);
+};
 
+module.exports = BaseModel = (function() {
   BaseModel.singular = 'undefinedSingular';
 
   BaseModel.plural = 'undefinedPlural';
 
   BaseModel.indices = [];
 
-  BaseModel.attributeNames = null;
-
   BaseModel.searchableFields = [];
 
-  function BaseModel(recordsInterface, data, postInitializeData) {
-    if (postInitializeData == null) {
-      postInitializeData = {};
+  function BaseModel(recordsInterface, attributes) {
+    if (attributes == null) {
+      attributes = {};
     }
-    this.saveFailure = bind(this.saveFailure, this);
-    this.saveSuccess = bind(this.saveSuccess, this);
-    this.destroy = bind(this.destroy, this);
     this.save = bind(this.save, this);
-    if (this.constructor.attributeNames == null) {
-      this.constructor.attributeNames = [];
-    }
-    this.setErrors();
+    this.destroy = bind(this.destroy, this);
+    this.belongsTo = bind(this.belongsTo, this);
+    this.inCollection = false;
     this.processing = false;
+    this.attributeNames = [];
+    this.setErrors();
     Object.defineProperty(this, 'recordsInterface', {
       value: recordsInterface,
       enumerable: false
@@ -40,14 +38,14 @@ module.exports = BaseModel = (function() {
       value: recordsInterface.recordStore,
       enumerable: false
     });
-    Object.defineProperty(this, 'restfulClient', {
-      value: recordsInterface.restfulClient,
+    Object.defineProperty(this, 'remote', {
+      value: recordsInterface.remote,
       enumerable: false
     });
-    this.initialize(data);
-    _.merge(this, postInitializeData);
-    if ((this.setupViews != null) && (this.id != null)) {
-      this.setupViews();
+    this.update(this.defaultValues());
+    this.update(attributes);
+    if (this.relationships != null) {
+      this.buildRelationships();
     }
   }
 
@@ -55,54 +53,33 @@ module.exports = BaseModel = (function() {
     return {};
   };
 
-  BaseModel.prototype.initialize = function(data) {
-    return this.baseInitialize(data);
-  };
-
-  BaseModel.prototype.baseInitialize = function(data) {
-    this.updateFromJSON(this.defaultValues());
-    return this.updateFromJSON(data);
-  };
-
   BaseModel.prototype.clone = function() {
-    var attrs, cloneRecord;
-    attrs = _.reduce(this.constructor.attributeNames, (function(_this) {
+    var cloneAttributes, cloneRecord;
+    cloneAttributes = _.transform(this.attributeNames, (function(_this) {
       return function(clone, attr) {
         clone[attr] = _this[attr];
-        return clone;
+        return true;
       };
-    })(this), {});
-    cloneRecord = new this.constructor(this.recordsInterface, attrs, {
-      id: this.id,
-      key: this.key
-    });
-    cloneRecord._clonedFrom = this;
+    })(this));
+    cloneRecord = new this.constructor(this.recordsInterface, cloneAttributes);
+    cloneRecord.clonedFrom = this;
     return cloneRecord;
   };
 
-  BaseModel.prototype.update = function(data) {
-    return this.updateFromJSON(data);
-  };
-
-  transformKeys = function(data, transformFn) {
-    var newData;
-    newData = {};
-    _.each(_.keys(data), function(key) {
-      newData[transformFn(key)] = data[key];
-    });
-    return newData;
-  };
-
-  isTimeAttribute = function(attributeName) {
-    return /At$/.test(attributeName);
+  BaseModel.prototype.update = function(attributes) {
+    this.attributeNames = _.union(this.attributeNames, _.keys(attributes));
+    _.assign(this, attributes);
+    if (this.inCollection) {
+      return this.recordsInterface.collection.update(this);
+    }
   };
 
   BaseModel.prototype.attributeIsModified = function(attributeName) {
     var current, original;
-    if (this._clonedFrom == null) {
+    if (this.clonedFrom == null) {
       return false;
     }
-    original = this._clonedFrom[attributeName];
+    original = this.clonedFrom[attributeName];
     current = this[attributeName];
     if (isTimeAttribute(attributeName)) {
       return !(original === current || current.isSame(original));
@@ -112,10 +89,10 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.modifiedAttributes = function() {
-    if (this._clonedFrom == null) {
+    if (this.clonedFrom == null) {
       return [];
     }
-    return _.filter(this.constructor.attributeNames, (function(_this) {
+    return _.filter(this.attributeNames, (function(_this) {
       return function(name) {
         return _this.attributeIsModified(name);
       };
@@ -123,43 +100,10 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.isModified = function() {
-    if (this._clonedFrom == null) {
+    if (this.clonedFrom == null) {
       return false;
     }
     return this.modifiedAttributes().length > 0;
-  };
-
-  BaseModel.prototype.updateFromJSON = function(jsonData) {
-    var data;
-    data = transformKeys(jsonData, _.camelCase);
-    this.scrapeAttributeNames(data);
-    return this.importData(data, this);
-  };
-
-  BaseModel.prototype.scrapeAttributeNames = function(data) {
-    return _.each(_.keys(data), (function(_this) {
-      return function(key) {
-        if (!_.contains(_this.constructor.attributeNames, key)) {
-          _this.constructor.attributeNames.push(key);
-        }
-      };
-    })(this));
-  };
-
-  BaseModel.prototype.importData = function(data, dest) {
-    return _.each(_.keys(data), (function(_this) {
-      return function(key) {
-        if (data[key] != null) {
-          if (isTimeAttribute(key) && moment(data[key]).isValid()) {
-            dest[key] = moment(data[key]);
-          } else {
-            dest[key] = data[key];
-          }
-        } else {
-          data[key] = null;
-        }
-      };
-    })(this));
   };
 
   BaseModel.prototype.serialize = function() {
@@ -181,32 +125,75 @@ module.exports = BaseModel = (function() {
     return wrapper;
   };
 
-  BaseModel.prototype.addView = function(collectionName, viewName) {
-    return this.recordStore[collectionName].collection.addDynamicView(this.id + "-" + viewName);
+  BaseModel.prototype.relationships = function() {};
+
+  BaseModel.prototype.buildRelationships = function() {
+    this.views = {};
+    return this.relationships();
   };
 
-  BaseModel.prototype.setupViews = function() {};
+  BaseModel.prototype.hasMany = function(name, userArgs) {
+    var addDynamicView, addFindMethod, args, defaults;
+    defaults = {
+      from: name,
+      "with": this.constructor.singular + 'Id',
+      of: 'id',
+      dynamicView: true
+    };
+    args = _.assign(defaults, userArgs);
+    addDynamicView = (function(_this) {
+      return function() {
+        var obj, viewName;
+        viewName = _this.constructor.plural + "." + name + "." + (Math.random());
+        _this.views[viewName] = _this.recordStore[args.from].collection.addDynamicView(name);
+        _this.views[viewName].applyFind((
+          obj = {},
+          obj["" + args["with"]] = _this[args.of],
+          obj
+        ));
+        if (args.sortBy) {
+          _this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
+        }
+        _this.views[viewName];
+        return _this[name] = function() {
+          return _this.views[viewName].data();
+        };
+      };
+    })(this);
+    addFindMethod = (function(_this) {
+      return function() {
+        return _this[name] = function() {
+          var obj;
+          return _this.recordStore[args.from].where((
+            obj = {},
+            obj["" + args["with"]] = _this[args.of],
+            obj
+          ));
+        };
+      };
+    })(this);
+    if (args.dynamicView) {
+      return addDynamicView();
+    } else {
+      return addFindMethod();
+    }
+  };
 
-  BaseModel.prototype.setupView = function(view, sort, desc) {
-    var idOption, viewName;
-    viewName = view + "View";
-    idOption = {};
-    idOption[this.constructor.singular + "Id"] = this.id;
-    this[viewName] = this.recordStore[view].collection.addDynamicView(this.viewName());
-    this[viewName].applyFind(idOption);
-    this[viewName].applyFind({
-      id: {
-        $gt: 0
-      }
-    });
-    return this[viewName].applySimpleSort(sort || 'createdAt', desc);
+  BaseModel.prototype.belongsTo = function(name, userArgs) {
+    var args, defaults;
+    defaults = {
+      from: name + 's',
+      by: name + 'Id'
+    };
+    args = _.assign(defaults, userArgs);
+    return this[name] = (function(_this) {
+      return function() {
+        return _this.recordStore[args.from].find(_this[args.by]);
+      };
+    })(this);
   };
 
   BaseModel.prototype.translationOptions = function() {};
-
-  BaseModel.prototype.viewName = function() {
-    return "" + this.constructor.plural + this.id;
-  };
 
   BaseModel.prototype.isNew = function() {
     return this.id == null;
@@ -220,40 +207,46 @@ module.exports = BaseModel = (function() {
     }
   };
 
-  BaseModel.prototype.save = function() {
-    this.setErrors();
-    if (this.processing) {
-      console.log("save returned, already processing:", this);
-      return;
-    }
-    this.processing = true;
-    if (this.isNew()) {
-      return this.restfulClient.create(this.serialize()).then(this.saveSuccess, this.saveFailure);
-    } else {
-      return this.restfulClient.update(this.keyOrId(), this.serialize()).then(this.saveSuccess, this.saveFailure);
-    }
-  };
-
   BaseModel.prototype.destroy = function() {
-    this.processing = true;
-    return this.restfulClient.destroy(this.keyOrId()).then((function(_this) {
-      return function() {
+    if (this.inCollection) {
+      this.recordsInterface.collection.remove(this);
+    }
+    if (!this.isNew()) {
+      this.processing = true;
+      return this.remote.destroy(this.keyOrId()).then((function(_this) {
+        return function() {
+          return _this.processing = false;
+        };
+      })(this));
+    }
+  };
+
+  BaseModel.prototype.save = function() {
+    var saveFailure, saveSuccess;
+    saveSuccess = (function(_this) {
+      return function(records) {
         _this.processing = false;
-        return _this.recordsInterface.remove(_this);
+        _this.clonedFrom = void 0;
+        return records;
       };
-    })(this), function() {});
+    })(this);
+    saveFailure = (function(_this) {
+      return function(errors) {
+        _this.processing = false;
+        _this.setErrors(errors);
+        throw errors;
+      };
+    })(this);
+    this.processing = true;
+    if (this.isNew) {
+      return this.remote.create(this.serialize()).then(saveSuccess, saveFailure);
+    } else {
+      return this.remote.update(this.keyOrId(), this.serialize()).then(saveSuccess, saveFailure);
+    }
   };
 
-  BaseModel.prototype.saveSuccess = function(records) {
-    this._clonedFrom = void 0;
-    this.processing = false;
-    return records;
-  };
-
-  BaseModel.prototype.saveFailure = function(errors) {
-    this.processing = false;
-    this.setErrors(errors);
-    throw errors;
+  BaseModel.prototype.clearErrors = function() {
+    return this.errors = {};
   };
 
   BaseModel.prototype.setErrors = function(errorList) {
@@ -278,9 +271,36 @@ module.exports = BaseModel = (function() {
 
 
 },{}],2:[function(require,module,exports){
-var _;
+var _, isTimeAttribute, parseJSON, transformKeys;
 
 _ = window._;
+
+transformKeys = function(attributes, transformFn) {
+  return _.transform(_.keys(attributes), function(result, key) {
+    result[transformFn(key)] = attributes[key];
+    return true;
+  });
+};
+
+parseJSON = function(json) {
+  var attributes;
+  attributes = transformKeys(json, _.camelCase);
+  _.each(_.keys(attributes), function(name) {
+    if (attributes[name] != null) {
+      if (isTimeAttribute(name) && moment(attributes[name]).isValid()) {
+        attributes[name] = moment(attributes[name]);
+      } else {
+        attributes[name] = attributes[name];
+      }
+    }
+    return true;
+  });
+  return attributes;
+};
+
+isTimeAttribute = function(attributeName) {
+  return /At$/.test(attributeName);
+};
 
 module.exports = function(RestfulClient, $q) {
   var BaseRecordsInterface;
@@ -296,103 +316,70 @@ module.exports = function(RestfulClient, $q) {
       this.collection = this.recordStore.db.addCollection(this.model.plural, {
         indices: this.model.indices
       });
-      this.restfulClient = new RestfulClient(this.model.plural);
-      this.latestCache = {};
-      this.restfulClient.onSuccess = (function(_this) {
+      this.remote = new RestfulClient(this.model.apiEndPoint || this.model.plural);
+      this.remote.onSuccess = (function(_this) {
         return function(response) {
-          return _this.recordStore["import"](response.data);
+          return _this.recordStore.importJSON(response.data);
         };
       })(this);
-      return this.restfulClient.onFailure = function(response) {
+      return this.remote.onFailure = function(response) {
         console.log('request failure!', response);
         throw response;
       };
     };
 
-    BaseRecordsInterface.prototype.build = function(data) {
-      if (data == null) {
-        data = {};
-      }
-      return new this.model(this, data);
-    };
-
-    BaseRecordsInterface.prototype["import"] = function(data) {
-      if (data == null) {
-        data = {};
-      }
-      return this.baseImport(data);
-    };
-
-    BaseRecordsInterface.prototype.baseImport = function(data) {
+    BaseRecordsInterface.prototype.build = function(attributes) {
       var record;
-      if (data == null) {
-        data = {};
+      if (attributes == null) {
+        attributes = {};
       }
-      if (record = this.find(data.key || data.id)) {
-        record.updateFromJSON(data);
+      return record = new this.model(this, attributes);
+    };
+
+    BaseRecordsInterface.prototype.create = function(attributes) {
+      var record;
+      if (attributes == null) {
+        attributes = {};
+      }
+      record = this.build(attributes);
+      this.collection.insert(record);
+      record.inCollection = true;
+      return record;
+    };
+
+    BaseRecordsInterface.prototype.fetch = function(args) {
+      return this.remote.fetch(args);
+    };
+
+    BaseRecordsInterface.prototype.importJSON = function(json) {
+      return this["import"](parseJSON(json));
+    };
+
+    BaseRecordsInterface.prototype["import"] = function(attributes) {
+      var record;
+      record = this.find(attributes.key || attributes.id);
+      if (record) {
+        record.update(attributes);
       } else {
-        this.collection.insert(record = this.build(data));
+        record = this.create(attributes);
       }
       return record;
     };
 
-    BaseRecordsInterface.prototype.remove = function(record) {
-      return this.collection.remove(record);
-    };
-
-    BaseRecordsInterface.prototype.findOrFetchByKey = function(key) {
+    BaseRecordsInterface.prototype.findOrFetchById = function(id) {
       var deferred, promise, record;
       deferred = $q.defer();
-      promise = this.fetchByKey(key).then((function(_this) {
+      promise = this.remote.fetchById(id).then((function(_this) {
         return function() {
-          return _this.find(key);
+          return _this.find(id);
         };
       })(this));
-      if (record = this.find(key)) {
+      if (record = this.find(id)) {
         deferred.resolve(record);
       } else {
         deferred.resolve(promise);
       }
       return deferred.promise;
-    };
-
-    BaseRecordsInterface.prototype.fetchByKey = function(key) {
-      return this.restfulClient.getMember(key);
-    };
-
-    BaseRecordsInterface.prototype.fetch = function(arg) {
-      var cacheKey, lastFetchedAt, params, path;
-      params = arg.params, path = arg.path, cacheKey = arg.cacheKey;
-      if (cacheKey) {
-        lastFetchedAt = this.applyLatestFetch(cacheKey);
-        if ((params != null) && (lastFetchedAt != null)) {
-          params.since = lastFetchedAt;
-        }
-      }
-      if (path != null) {
-        return this.restfulClient.get(path, params);
-      } else {
-        return this.restfulClient.getCollection(params);
-      }
-    };
-
-    BaseRecordsInterface.prototype.applyLatestFetch = function(cacheKey) {
-      var lastFetchedAt;
-      lastFetchedAt = this.latestCache[cacheKey];
-      this.latestCache[cacheKey] = moment().toDate();
-      return lastFetchedAt;
-    };
-
-    BaseRecordsInterface.prototype.where = function(params) {
-      return this.collection.chain().find(params).data();
-    };
-
-    BaseRecordsInterface.prototype.belongingTo = function(params) {
-      return this.collection.addDynamicView(this.viewName(params)).applyFind(params);
-    };
-
-    BaseRecordsInterface.prototype.viewName = function(params) {
-      return _.keys(params).join() + _.values(params).join();
     };
 
     BaseRecordsInterface.prototype.find = function(q) {
@@ -443,8 +430,8 @@ module.exports = function(RestfulClient, $q) {
       });
     };
 
-    BaseRecordsInterface.prototype.destroy = function(id) {
-      return this.restfulClient.destroy(id);
+    BaseRecordsInterface.prototype.where = function(params) {
+      return this.collection.chain().find(params).data();
     };
 
     return BaseRecordsInterface;
@@ -489,7 +476,7 @@ module.exports = RecordStore = (function() {
         camelName = _.camelCase(name);
         if (data[snakeName] != null) {
           return _.each(data[snakeName], function(recordData) {
-            return _this[camelName]["import"](recordData);
+            return _this[camelName].importJSON(recordData);
           });
         }
       };
@@ -521,6 +508,7 @@ module.exports = function($http, $upload) {
     };
 
     function RestfulClient(resourcePlural) {
+      this.processing = [];
       this.resourcePlural = _.snakeCase(resourcePlural);
     }
 
@@ -551,6 +539,20 @@ module.exports = function($http, $upload) {
 
     RestfulClient.prototype.customPath = function(path) {
       return this.apiPrefix + "/" + this.resourcePlural + "/" + path;
+    };
+
+    RestfulClient.prototype.fetchById = function(id) {
+      return this.getMember(id);
+    };
+
+    RestfulClient.prototype.fetch = function(arg) {
+      var params, path;
+      params = arg.params, path = arg.path;
+      if (path != null) {
+        return this.get(path, params);
+      } else {
+        return this.getCollection(params);
+      }
     };
 
     RestfulClient.prototype.get = function(path, params) {

@@ -29,10 +29,10 @@ module.exports = (RestfulClient, $q) ->
     baseConstructor: (recordStore) ->
       @recordStore = recordStore
       @collection = @recordStore.db.addCollection(@model.plural, {indices: @model.indices})
-      @remote = new RestfulClient(@model.plural)
+      @remote = new RestfulClient(@model.apiEndPoint or @model.plural)
 
       @remote.onSuccess = (response) =>
-        @recordStore.import(response.data)
+        @recordStore.importJSON(response.data)
 
       @remote.onFailure = (response) ->
         console.log('request failure!', response)
@@ -46,6 +46,9 @@ module.exports = (RestfulClient, $q) ->
       @collection.insert(record)
       record.inCollection = true
       record
+
+    fetch: (args) ->
+      @remote.fetch(args)
 
     importJSON: (json) ->
       @import(parseJSON(json))
