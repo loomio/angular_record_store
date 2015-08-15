@@ -41,7 +41,7 @@ module.exports =
       _.assign(@, attributes)
 
       # calling update on the collection just updates views/indexes
-      @recordsInterface.update(@) if @inCollection
+      @recordsInterface.collection.update(@) if @inCollection
 
     attributeIsModified: (attributeName) ->
       return false unless @clonedFrom?
@@ -115,7 +115,7 @@ module.exports =
         @id
 
     destroy: =>
-      @recordsInterface.remove(@) if @inCollection
+      @recordsInterface.collection.remove(@) if @inCollection
       unless @isNew()
         @processing = true
         @remote.destroy(@keyOrId()).then =>

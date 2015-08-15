@@ -47,12 +47,6 @@ module.exports = (RestfulClient, $q) ->
       record.inCollection = true
       record
 
-    update: (record) ->
-      @collection.update(record)
-
-    remove: (record) ->
-      @collection.remove(record)
-
     importJSON: (json) ->
       @import(parseJSON(json))
 
@@ -66,7 +60,7 @@ module.exports = (RestfulClient, $q) ->
 
     findOrFetchById: (id) ->
       deferred = $q.defer()
-      promise = @fetchById(id).then => @find(id)
+      promise = @remote.fetchById(id).then => @find(id)
 
       if record = @find(id)
         deferred.resolve(record)
