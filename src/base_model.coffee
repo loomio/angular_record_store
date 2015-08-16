@@ -21,6 +21,9 @@ module.exports =
     # leave null to serialize all attributes
     @serializableAttributes: null
 
+    # what is the key to use when serializing the record?
+    @serializationRoot: null
+
     # override this if your apiEndPoint is not the model.plural
     @apiEndPoint: null
 
@@ -81,7 +84,7 @@ module.exports =
     baseSerialize: ->
       wrapper = {}
       data = {}
-      paramKey = _.snakeCase(@constructor.singular)
+      paramKey = _.snakeCase(@constructor.serializationRoot or @constructor.singular)
       _.each @constructor.serializableAttributes or @attributeNames, (attributeName) =>
         data[_.snakeCase(attributeName)] = @[_.camelCase(attributeName)]
         true # so if the value is false we don't break the loop
@@ -152,12 +155,13 @@ module.exports =
         @id
 
     destroy: =>
-      @recordsInterface.collection.remove(@) if @inCollection
+      if @inCollection
+        @inCollection = false
+        @recordsInterface.collection.remove(@)
       unless @isNew()
         @processing = true
         @remote.destroy(@keyOrId()).then =>
           @processing = false
-
 
     save: =>
       saveSuccess = (records) =>

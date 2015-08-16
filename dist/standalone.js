@@ -23,6 +23,8 @@ module.exports = BaseModel = (function() {
 
   BaseModel.serializableAttributes = null;
 
+  BaseModel.serializationRoot = null;
+
   BaseModel.apiEndPoint = null;
 
   function BaseModel(recordsInterface, attributes) {
@@ -120,7 +122,7 @@ module.exports = BaseModel = (function() {
     var data, paramKey, wrapper;
     wrapper = {};
     data = {};
-    paramKey = _.snakeCase(this.constructor.singular);
+    paramKey = _.snakeCase(this.constructor.serializationRoot || this.constructor.singular);
     _.each(this.constructor.serializableAttributes || this.attributeNames, (function(_this) {
       return function(attributeName) {
         data[_.snakeCase(attributeName)] = _this[_.camelCase(attributeName)];
@@ -224,6 +226,7 @@ module.exports = BaseModel = (function() {
 
   BaseModel.prototype.destroy = function() {
     if (this.inCollection) {
+      this.inCollection = false;
       this.recordsInterface.collection.remove(this);
     }
     if (!this.isNew()) {
