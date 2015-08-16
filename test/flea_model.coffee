@@ -7,7 +7,8 @@ module.exports = (BaseModel) ->             # export a fn injecting BaseModel
   class FleaModel extends BaseModel          # and returning your model class
     @singular: 'flea'                        # term for single *required*
     @plural: 'fleas'                         # term for many *required*
-    @indices: ['ownerId']                   # array - any attributes often used for lookup
+    @indices: ['dogId']                   # array - any attributes often used for lookup
+    @serializableAttributes: ['letter', 'biting']
 
     defaultValues: ->                       # fn returning a object with default values for new records
       letter: nextLetter()

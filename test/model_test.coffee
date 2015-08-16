@@ -11,8 +11,12 @@ BaseModel = require('../src/base_model.coffee')
 BaseRecordsInterface = null
 
 DogModel = null
+FleaModel = null
+PersonModel = null
 
 dog = null
+flea = null
+person = null
 recordStore = null
 
 sharedSetup = ->
@@ -33,13 +37,27 @@ sharedSetup = ->
     PersonRecordsInterface = require('./person_records_interface.coffee')(BaseRecordsInterface, PersonModel)
     recordStore.addRecordsInterface(PersonRecordsInterface)
 
-    #console.log 'doggies: ', recordStore, recordStore.doggies
-    #dog = recordStore.doggies.build(someAttribute: 'hello') # not inserted into collection
-    #dog = recordStore.doggies.importJSON(is_fluffy: true, loves_running: true) # insert or update
-
 describe 'BaseModel', ->
   beforeEach ->
     sharedSetup()
+
+  describe 'class variables', ->
+    it 'indices', ->
+      expect(DogModel.indices).toEqual(['ownerId'])
+      expect(FleaModel.indices).toEqual(['dogId'])
+
+    it 'singular', ->
+      expect(DogModel.singular).toEqual('dog')
+      expect(FleaModel.singular).toEqual('flea')
+
+    it 'plural', ->
+      expect(DogModel.plural).toEqual('doggies')
+      expect(FleaModel.plural).toEqual('fleas')
+
+    it 'serializableAttributes', ->
+      expect(DogModel.serializableAttributes).toEqual(['id', 'name', 'ownerId'])
+      expect(FleaModel.serializableAttributes).toEqual(['letter', 'biting'])
+      expect(PersonModel.serializableAttributes).toEqual(null)
 
   describe 'clone', ->
     dog = null
@@ -84,13 +102,18 @@ describe 'BaseModel', ->
       it 'returns corresponding person record', ->
         expect(dog.owner()).toBe(cruella)
 
+  describe 'serialize', ->
+    beforeEach ->
+      dog = recordStore.doggies.create(id: 1, name: 'ruff', isFluffy: true, ownerId: 1)
+      flea = recordStore.fleas.create(dogId: 1)
+      person = recordStore.people.create(id: 1, name: 'Curella', isWacky: 'always')
 
-  # things yet to test
-  # serialize
-  # indices
-  # attributeNames
-  # setErrors sets errors
-  # check if we need the postInitalize that clone uses
+    it 'only serializes specified attributes', ->
+      expect(_.keys dog.serialize()['dog']).toEqual(['id', 'name', 'owner_id'])
+      expect(_.keys flea.serialize()['flea']).toEqual(['letter', 'biting'])
+
+    it 'serializes all attributesNames if no serializableAttributes specified', ->
+      expect(_.keys person.serialize()['person']).toEqual(['age', 'name', 'id', 'is_wacky'])
 
 describe 'recordsInterface', ->
   beforeEach ->
@@ -105,7 +128,7 @@ describe 'recordsInterface', ->
 
     it 'does not insert into collection', ->
       expect(dog.inCollection).toBe(false)
-      expect(recordStore.doggies.find(42)).toBe(null)
+      expect(recordStore.doggies.find(42)).toBe(undefined)
 
     it 'overrides defaults and allows new properties', ->
       dog = recordStore.doggies.build(isFluffy: false, smellsBad: true)

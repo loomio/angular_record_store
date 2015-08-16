@@ -29,6 +29,9 @@ module.exports = (RestfulClient, $q) ->
     baseConstructor: (recordStore) ->
       @recordStore = recordStore
       @collection = @recordStore.db.addCollection(@model.plural, {indices: @model.indices})
+      _.each @model.uniqueIndices, (name) =>
+        @collection.ensureUniqueIndex(name)
+
       @remote = new RestfulClient(@model.apiEndPoint or @model.plural)
 
       @remote.onSuccess = (response) =>
@@ -74,7 +77,7 @@ module.exports = (RestfulClient, $q) ->
 
     find: (q) ->
       if q == null or q == undefined
-        null
+        undefined
       else if _.isNumber(q)
         @findById(q)
       else if _.isString(q)
@@ -90,10 +93,10 @@ module.exports = (RestfulClient, $q) ->
         @collection.find(q)
 
     findById: (id) ->
-      @collection.findOne(id: id)
+      @collection.by('id', id)
 
     findByKey: (key) ->
-      @collection.findOne(key: key)
+      @collection.by('key', key)
 
     findByIds: (ids) ->
       @collection.find(id: {'$in': ids})

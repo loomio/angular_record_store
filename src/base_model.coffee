@@ -8,8 +8,18 @@ module.exports =
   class BaseModel
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'
+
+    # indicate to Loki our 'primary keys' - it promises to make these fast to lookup by.
+    @uniqueIndices: ['id']
+
+    # list of other attributes to index
     @indices: []
+
     @searchableFields: []
+
+    # whitelist of attributes to include when serializing the record.
+    # leave null to serialize all attributes
+    @serializableAttributes: null
 
     constructor: (recordsInterface, attributes = {}) ->
       @inCollection = false
@@ -19,7 +29,6 @@ module.exports =
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
       Object.defineProperty(@, 'remote', value: recordsInterface.remote, enumerable: false)
-
 
       @update(@defaultValues())
       @update(attributes)
@@ -70,7 +79,8 @@ module.exports =
       wrapper = {}
       data = {}
       paramKey = _.snakeCase(@constructor.singular)
-      _.each window.Loomio.permittedParams[paramKey], (attributeName) =>
+      # lineman/app/components/discussion_form/discussion_form.coffee
+      _.each @constructor.serializableAttributes or @attributeNames, (attributeName) =>
         data[_.snakeCase(attributeName)] = @[_.camelCase(attributeName)]
         true # so if the value is false we don't break the loop
       wrapper[paramKey] = data
@@ -159,7 +169,7 @@ module.exports =
         throw errors
 
       @processing = true
-      if @isNew
+      if @isNew()
         @remote.create(@serialize()).then(saveSuccess, saveFailure)
       else
         @remote.update(@keyOrId(), @serialize()).then(saveSuccess, saveFailure)

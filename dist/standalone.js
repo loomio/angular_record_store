@@ -15,9 +15,13 @@ module.exports = BaseModel = (function() {
 
   BaseModel.plural = 'undefinedPlural';
 
+  BaseModel.uniqueIndices = ['id'];
+
   BaseModel.indices = [];
 
   BaseModel.searchableFields = [];
+
+  BaseModel.serializableAttributes = null;
 
   function BaseModel(recordsInterface, attributes) {
     if (attributes == null) {
@@ -115,7 +119,7 @@ module.exports = BaseModel = (function() {
     wrapper = {};
     data = {};
     paramKey = _.snakeCase(this.constructor.singular);
-    _.each(window.Loomio.permittedParams[paramKey], (function(_this) {
+    _.each(this.constructor.serializableAttributes || this.attributeNames, (function(_this) {
       return function(attributeName) {
         data[_.snakeCase(attributeName)] = _this[_.camelCase(attributeName)];
         return true;
@@ -247,7 +251,7 @@ module.exports = BaseModel = (function() {
       };
     })(this);
     this.processing = true;
-    if (this.isNew) {
+    if (this.isNew()) {
       return this.remote.create(this.serialize()).then(saveSuccess, saveFailure);
     } else {
       return this.remote.update(this.keyOrId(), this.serialize()).then(saveSuccess, saveFailure);
@@ -325,6 +329,11 @@ module.exports = function(RestfulClient, $q) {
       this.collection = this.recordStore.db.addCollection(this.model.plural, {
         indices: this.model.indices
       });
+      _.each(this.model.uniqueIndices, (function(_this) {
+        return function(name) {
+          return _this.collection.ensureUniqueIndex(name);
+        };
+      })(this));
       this.remote = new RestfulClient(this.model.apiEndPoint || this.model.plural);
       this.remote.onSuccess = (function(_this) {
         return function(response) {
@@ -393,7 +402,7 @@ module.exports = function(RestfulClient, $q) {
 
     BaseRecordsInterface.prototype.find = function(q) {
       if (q === null || q === void 0) {
-        return null;
+        return void 0;
       } else if (_.isNumber(q)) {
         return this.findById(q);
       } else if (_.isString(q)) {
@@ -412,15 +421,11 @@ module.exports = function(RestfulClient, $q) {
     };
 
     BaseRecordsInterface.prototype.findById = function(id) {
-      return this.collection.findOne({
-        id: id
-      });
+      return this.collection.by('id', id);
     };
 
     BaseRecordsInterface.prototype.findByKey = function(key) {
-      return this.collection.findOne({
-        key: key
-      });
+      return this.collection.by('key', key);
     };
 
     BaseRecordsInterface.prototype.findByIds = function(ids) {

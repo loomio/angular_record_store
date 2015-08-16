@@ -3,6 +3,7 @@ module.exports = (BaseModel) ->             # export a fn injecting BaseModel
     @singular: 'dog'                        # term for single *required*
     @plural: 'doggies'                      # term for many *required*
     @indices: ['ownerId']                   # array - any attributes often used for lookup
+    @serializableAttributes: ['id', 'name', 'ownerId']
 
     defaultValues: ->                       # fn returning a object with default values for new records
       name: null                            # i think this is a good way to define both attributeNames and default values
