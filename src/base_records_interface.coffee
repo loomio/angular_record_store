@@ -1,5 +1,24 @@
 _ = window._
 
+transformKeys = (attributes, transformFn) ->
+  _.transform _.keys(attributes), (result, key) ->
+    result[transformFn(key)] = attributes[key]
+    true
+
+parseJSON = (json) ->
+  attributes = transformKeys(json, _.camelCase)
+  _.each _.keys(attributes), (name) ->
+    if attributes[name]?
+      if isTimeAttribute(name) and moment(attributes[name]).isValid()
+        attributes[name] = moment(attributes[name])
+      else
+        attributes[name] = attributes[name]
+    true
+  attributes
+
+isTimeAttribute = (attributeName) ->
+  /At$/.test(attributeName)
+
 module.exports = (RestfulClient, $q) ->
   class BaseRecordsInterface
     model: 'undefinedModel'
@@ -10,76 +29,55 @@ module.exports = (RestfulClient, $q) ->
     baseConstructor: (recordStore) ->
       @recordStore = recordStore
       @collection = @recordStore.db.addCollection(@model.plural, {indices: @model.indices})
-      @restfulClient = new RestfulClient(@model.plural)
-      @latestCache = {}
+      _.each @model.uniqueIndices, (name) =>
+        @collection.ensureUniqueIndex(name)
 
-      @restfulClient.onSuccess = (response) =>
+      @remote = new RestfulClient(@model.apiEndPoint or @model.plural)
+
+      @remote.onSuccess = (response) =>
         @recordStore.import(response.data)
 
-      @restfulClient.onFailure = (response) ->
+      @remote.onFailure = (response) ->
         console.log('request failure!', response)
         throw response
 
-    build: (data = {}) ->
-      new @model @, data
+    build: (attributes = {}) ->
+      record = new @model @, attributes
 
-    import: (data = {}) ->
-      @baseImport(data)
-
-    baseImport: (data = {}) ->
-      if record = @find(data.key or data.id)
-        record.updateFromJSON(data)
-      else
-        @collection.insert(record = @build(data))
+    create: (attributes = {}) ->
+      record = @build(attributes)
+      @collection.insert(record)
+      record.inCollection = true
       record
 
-    remove: (record) ->
-      @collection.remove(record)
+    fetch: (args) ->
+      @remote.fetch(args)
 
-    findOrFetchByKey: (key) ->
+    importJSON: (json) ->
+      @import(parseJSON(json))
+
+    import: (attributes) ->
+      record = @find(attributes.key or attributes.id)
+      if record
+        record.update(attributes)
+      else
+        record = @create(attributes)
+      record
+
+    findOrFetchById: (id) ->
       deferred = $q.defer()
-      promise = @fetchByKey(key).then => @find(key)
+      promise = @remote.fetchById(id).then => @find(id)
 
-      if record = @find(key)
+      if record = @find(id)
         deferred.resolve(record)
       else
         deferred.resolve(promise)
 
       deferred.promise
 
-    fetchByKey: (key) ->
-      @restfulClient.getMember(key)
-
-    fetch: ({params, path, cacheKey}) ->
-      if cacheKey
-        lastFetchedAt = @applyLatestFetch(cacheKey)
-        params.since = lastFetchedAt if params? and lastFetchedAt?
-
-      if path?
-        @restfulClient.get(path, params)
-      else
-        @restfulClient.getCollection(params)
-
-    applyLatestFetch: (cacheKey) ->
-      lastFetchedAt = @latestCache[cacheKey]
-      @latestCache[cacheKey] = moment().toDate()
-      lastFetchedAt
-
-    where: (params) ->
-      @collection.chain().find(params).data()
-
-    # creates and maintains a view. consider costs of this vs where
-    # you'll need to call .data() yourself. that's why this is a view
-    belongingTo: (params) ->
-      @collection.addDynamicView(@viewName(params))
-                 .applyFind(params)
-
-    viewName: (params) ->
-      _.keys(params).join() + _.values(params).join()
-
     find: (q) ->
       if q == null or q == undefined
-        null
+        undefined
       else if _.isNumber(q)
         @findById(q)
       else if _.isString(q)
@@ -95,10 +93,10 @@ module.exports = (RestfulClient, $q) ->
         @collection.find(q)
 
     findById: (id) ->
-      @collection.findOne(id: id)
+      @collection.by('id', id)
 
     findByKey: (key) ->
-      @collection.findOne(key: key)
+      @collection.by('key', key)
 
     findByIds: (ids) ->
       @collection.find(id: {'$in': ids})
@@ -106,5 +104,5 @@ module.exports = (RestfulClient, $q) ->
     findByKeys: (keys) ->
       @collection.find(key: {'$in': keys})
 
-    destroy: (id) ->
-      @restfulClient.destroy(id)
+    where: (params) ->
+      @collection.chain().find(params).data()

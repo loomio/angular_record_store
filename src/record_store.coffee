@@ -18,5 +18,5 @@ module.exports =
         camelName = _.camelCase(name)
         if data[snakeName]?
           _.each data[snakeName], (recordData) =>
-            @[camelName].import(recordData)
+            @[camelName].importJSON(recordData)
       data
