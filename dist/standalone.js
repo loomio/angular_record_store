@@ -23,6 +23,8 @@ module.exports = BaseModel = (function() {
 
   BaseModel.serializableAttributes = null;
 
+  BaseModel.apiEndPoint = null;
+
   function BaseModel(recordsInterface, attributes) {
     if (attributes == null) {
       attributes = {};

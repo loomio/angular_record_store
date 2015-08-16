@@ -21,6 +21,9 @@ module.exports =
     # leave null to serialize all attributes
     @serializableAttributes: null
 
+    # override this if your apiEndPoint is not the model.plural
+    @apiEndPoint: null
+
     constructor: (recordsInterface, attributes = {}) ->
       @inCollection = false
       @processing = false # not returning/throwing on already processing rn
