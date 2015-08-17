@@ -1,8 +1,8 @@
 {
   "name": "angular_record_store",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "An ActiveRecord-like ORM built ontop of Loki-js",
-  "main": "index.coffee",
+  "main": "src/index.coffee",
   "scripts": {
     "test": "karma start",
     "build-watch": "watchify src/index.coffee -o dist/standalone.js -v -s AngularRecordStore",

@@ -160,4 +160,24 @@ describe 'recordsInterface', ->
     it "momentizes attrbutes ending in _at", ->
       expect(dog.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
 
+  describe 'find', ->
+    beforeEach ->
+      dog = recordStore.doggies.create(id: 1, key: 'a')
 
+    it 'looks up item by id', ->
+      expect(recordStore.doggies.find(1).id).toEqual(dog.id)
+
+    it 'returns null if nothing found for single', ->
+      expect(recordStore.doggies.find(7)).toBe(null)
+
+    it 'returns [] if nothing found for many', ->
+      expect(recordStore.doggies.find([7]).length).toBe(0)
+
+    it 'looks up item by key', ->
+      expect(recordStore.doggies.find('a').key).toEqual(mock.key)
+
+    it 'looks up items by ids', ->
+      expect(recordStore.doggies.find([1])[0].id).toBe(1)
+
+    it 'looks up items by keys', ->
+      expect(recordStore.doggies.find(['a'])[0].key).toBe('a')
