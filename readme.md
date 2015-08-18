@@ -27,11 +27,11 @@ class DogModel extends BaseModel
 
   relationships: ->       # describe the relationships with other records
     @hasMany 'fleas',     # creates method dog.fleas() so you can retrieve associated flea records.
-                          # optional arguments available:
+                          # optional arguments available (defaults shown)
       from: 'fleas'       # collection that the associated records live in
       with: 'dogId'       # foreign key
       of: 'id'            # source key
-      sortBy: 'letter'    # optional sorting
+      sortBy: 'letter'    # optional sorting (not default acutally)
       sortDesc: true      # But wait there's more! Chain anything from http://lokijs.org/#/docs#views
 
     @belongsTo 'owner',   # creates dog.owner() 
