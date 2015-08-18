@@ -28,12 +28,13 @@ class DogModel extends BaseModel
   relationships: ->       # describe the relationships with other records
     @hasMany 'fleas',     # creates method dog.fleas() so you can retrieve associated flea records.
                           # optional arguments available:
-      from: 'fleas',      # collection that the associated records live in
-      with: 'dogId',      # foreign key
-      of: 'id             # source key
-      sortBy: 'letter'    # Optional sorting. You can also chain
-      sortDesc: true      # other query methods onto the return value of this call
-      # finally you can chain [LokiJs DynamicView](http://lokijs.org/#/docs#views) methods as you need
+      from: 'fleas'       # collection that the associated records live in
+      with: 'dogId'       # foreign key
+      of: 'id'            # source key
+      sortBy: 'letter'    # optional sorting
+      sortDesc: true      #
+
+    # But wait there's more! You can chain more anything from [LokiJs DynamicView](http://lokijs.org/#/docs#views) to give the result set you need
 
     @belongsTo 'owner',   # creates dog.owner() 
       from: 'people'      # owner is a person record in the people collection
