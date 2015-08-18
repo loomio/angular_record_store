@@ -4,6 +4,9 @@ moment = window.moment
 isTimeAttribute = (attributeName) ->
   /At$/.test(attributeName)
 
+inCollection = (record) ->
+  record.hasOwnProperty('$loki')
+
 module.exports =
   class BaseModel
     @singular: 'undefinedSingular'
@@ -28,7 +31,6 @@ module.exports =
     @apiEndPoint: null
 
     constructor: (recordsInterface, attributes = {}) ->
-      @inCollection = false
       @processing = false # not returning/throwing on already processing rn
       @attributeNames = []
       @setErrors()
@@ -58,7 +60,7 @@ module.exports =
       _.assign(@, attributes)
 
       # calling update on the collection just updates views/indexes
-      @recordsInterface.collection.update(@) if @inCollection
+      @recordsInterface.collection.update(@) if inCollection(@)
 
     attributeIsModified: (attributeName) ->
       return false unless @clonedFrom?
@@ -155,8 +157,7 @@ module.exports =
         @id
 
     destroy: =>
-      if @inCollection
-        @inCollection = false
+      if inCollection(@)
         @recordsInterface.collection.remove(@)
       unless @isNew()
         @processing = true

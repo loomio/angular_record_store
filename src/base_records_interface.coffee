@@ -19,6 +19,7 @@ parseJSON = (json) ->
 isTimeAttribute = (attributeName) ->
   /At$/.test(attributeName)
 
+
 module.exports = (RestfulClient, $q) ->
   class BaseRecordsInterface
     model: 'undefinedModel'
@@ -47,7 +48,6 @@ module.exports = (RestfulClient, $q) ->
     create: (attributes = {}) ->
       record = @build(attributes)
       @collection.insert(record)
-      record.inCollection = true
       record
 
     fetch: (args) ->

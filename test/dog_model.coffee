@@ -2,7 +2,8 @@ module.exports = (BaseModel) ->             # export a fn injecting BaseModel
   class DogModel extends BaseModel          # and returning your model class
     @singular: 'dog'                        # term for single *required*
     @plural: 'doggies'                      # term for many *required*
-    @indices: ['ownerId']                   # array - any attributes often used for lookup
+    @indices: ['ownerId']                   # any attributes often used for lookup
+    @uniqueIndices: ['id', 'key']
     @serializableAttributes: ['id', 'name', 'ownerId']
 
     defaultValues: ->                       # fn returning a object with default values for new records

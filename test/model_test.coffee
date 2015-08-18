@@ -127,7 +127,6 @@ describe 'recordsInterface', ->
       expect(dog.isFluffy).toBe(true)
 
     it 'does not insert into collection', ->
-      expect(dog.inCollection).toBe(false)
       expect(recordStore.doggies.find(42)).toBe(undefined)
 
     it 'overrides defaults and allows new properties', ->
@@ -168,13 +167,13 @@ describe 'recordsInterface', ->
       expect(recordStore.doggies.find(1).id).toEqual(dog.id)
 
     it 'returns null if nothing found for single', ->
-      expect(recordStore.doggies.find(7)).toBe(null)
+      expect(recordStore.doggies.find(7)).toBe(undefined)
 
     it 'returns [] if nothing found for many', ->
       expect(recordStore.doggies.find([7]).length).toBe(0)
 
     it 'looks up item by key', ->
-      expect(recordStore.doggies.find('a').key).toEqual(mock.key)
+      expect(recordStore.doggies.find('a').key).toEqual(dog.key)
 
     it 'looks up items by ids', ->
       expect(recordStore.doggies.find([1])[0].id).toBe(1)
