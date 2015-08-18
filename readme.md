@@ -14,28 +14,34 @@ you can use them kind of like you did on the server side.
 
 Here is a Coffeescript example of a client side model definition:
 
-```
-class DogModel extends BaseModel          # and returning your model class
-  @singular: 'dog'                        # term for single *required*
-  @plural: 'dogs'                      # term for many *required*
-  @indices: ['ownerId']                   # any attributes often used for lookup
+```coffee
+class DogModel extends BaseModel
+  @singular: 'dog'        # term for single (required)
+  @plural: 'dogs'         # term for many (required)
+  @indices: ['ownerId']   # index these columns for fast lookup
 
-  defaultValues: ->                       # fn returning a object with default values for new records
-    name: null                            # i think this is a good way to define both attributeNames and default values
+  defaultValues: ->       # fn returning attributes for new records
+    name: null
     age: 0
     isFluffy: true
 
-  relationships: ->                          # describe the relationships with other records
-    @hasMany 'fleas',                         # creates a fn fleas that returns all flea records where dog.id == flea.dogId
-      sortBy: 'letter'
-      sortDesc: true
+  relationships: ->       # describe the relationships with other records
+    @hasMany 'fleas',     # creates method dog.fleas() so you can retrieve associated flea records.
+                          # optional arguments available:
+      from: 'fleas',      # collection that the associated records live in
+      with: 'dogId',      # foreign key
+      of: 'id             # source key
+      sortBy: 'letter'    # Optional sorting. You can also chain
+      sortDesc: true      # other query methods onto the return value of this call
+      # finally you can chain [LokiJs DynamicView](http://lokijs.org/#/docs#views) methods as you need
 
-    @belongsTo 'owner',                       # sets up owner: -> Records.users.find(@ownerId)
-      from: 'people'                          # all parameters required for now
-      by: 'ownerId'
+    @belongsTo 'owner',   # creates dog.owner() 
+      from: 'people'      # owner is a person record in the people collection
+      by: 'ownerId'       # by: 'ownerId', of: 'id' are the defaults
+      of: 'id'            # in this case. only specified here as example
 
-  ownerName: ->
-    @owner.name()                            # add any functions you wish
+  ownerName: ->           # add any model methods you wish
+    @owner.name()         # this gives you dog.ownerName()
 
   scratchSelf: ->
     _.each _.sample(@fleas(), 5), (flea) -> # lodash is available for you
@@ -51,6 +57,8 @@ Other things I really like about my library:
   - makes relationships and computed attributes and generally being a model really easy.
   - restfulClient makes http requests easy
 
+To maybe do:
+  - automatically add index columns when specifying relationships
 
 To build:
 npm run test
