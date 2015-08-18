@@ -32,7 +32,7 @@ class DogModel extends BaseModel
       with: 'dogId'       # foreign key
       of: 'id'            # source key
       sortBy: 'letter'    # optional sorting
-      sortDesc: true      # But wait there's more! Chain anything from [LokiJs DynamicView](http://lokijs.org/#/docs#views)
+      sortDesc: true      # But wait there's more! Chain anything from http://lokijs.org/#/docs#views
 
     @belongsTo 'owner',   # creates dog.owner() 
       from: 'people'      # owner is a person record in the people collection
