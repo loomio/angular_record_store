@@ -1,9 +1,11 @@
 _ = window._
 
 transformKeys = (attributes, transformFn) ->
-  _.transform _.keys(attributes), (result, key) ->
+  result = {}
+  _.each _.keys(attributes), (key) ->
     result[transformFn(key)] = attributes[key]
     true
+  result
 
 parseJSON = (json) ->
   attributes = transformKeys(json, _.camelCase)
@@ -90,13 +92,20 @@ module.exports = (RestfulClient, $q) ->
         else if _.isNumber(q[0])
           @findByIds(q)
       else
-        @collection.find(q)
+        chain = @collection.chain()
+        _.each _.keys(q), (key) ->
+          chain.find("#{key}": q[key])
+          true
+        chain.data()
 
     findById: (id) ->
       @collection.by('id', id)
 
     findByKey: (key) ->
-      @collection.by('key', key)
+      if @collection.constraints.unique['key']?
+        @collection.by('key', key)
+      else
+        @collection.findOne(key: key)
 
     findByIds: (ids) ->
       @collection.find(id: {'$in': ids})
@@ -104,5 +113,3 @@ module.exports = (RestfulClient, $q) ->
     findByKeys: (keys) ->
       @collection.find(key: {'$in': keys})
 
-    where: (params) ->
-      @collection.chain().find(params).data()

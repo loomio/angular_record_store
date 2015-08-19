@@ -59,5 +59,6 @@ Other things I really like about my library:
 To maybe do:
   - automatically add index columns when specifying relationships
 
-To build:
-npm run test
+To find out how to use this for real, you should read the files in /test
+
+To run the tests: npm test

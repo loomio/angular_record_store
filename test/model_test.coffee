@@ -159,6 +159,9 @@ describe 'recordsInterface', ->
     it "momentizes attrbutes ending in _at", ->
       expect(dog.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
 
+
+
+
   describe 'find', ->
     beforeEach ->
       dog = recordStore.doggies.create(id: 1, key: 'a')
@@ -180,3 +183,13 @@ describe 'recordsInterface', ->
 
     it 'looks up items by keys', ->
       expect(recordStore.doggies.find(['a'])[0].key).toBe('a')
+
+    it 'performs complex find when given object with many conditions', ->
+      recordStore.doggies.create(id: 5, smellsBad: true)
+      goodDog1 = recordStore.doggies.create(id: 6, smellsBad: false)
+      recordStore.doggies.create(id: 7, smellsBad: true)
+      goodDog2 = recordStore.doggies.create(id: 8, smellsBad: false)
+
+      records = recordStore.doggies.find({'id': {'$gt': 5}, 'smellsBad': false})
+      expect(records).toContain(goodDog1, goodDog2)
+      expect(records.length).toBe(2)

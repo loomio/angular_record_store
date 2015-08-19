@@ -37,7 +37,6 @@ module.exports = BaseModel = (function() {
     }
     this.save = bind(this.save, this);
     this.destroy = bind(this.destroy, this);
-    this.belongsTo = bind(this.belongsTo, this);
     this.processing = false;
     this.attributeNames = [];
     this.setErrors();
@@ -156,9 +155,6 @@ module.exports = BaseModel = (function() {
       return function() {
         var obj, viewName;
         viewName = _this.constructor.plural + "." + name + "." + (Math.random());
-        if (_this.recordStore[args.from] == null) {
-          console.log(args.from);
-        }
         _this.views[viewName] = _this.recordStore[args.from].collection.addDynamicView(name);
         _this.views[viewName].applyFind((
           obj = {},
@@ -178,9 +174,6 @@ module.exports = BaseModel = (function() {
       return function() {
         return _this[name] = function() {
           var obj;
-          if (_this.recordStore[args.from] == null) {
-            console.log(args.from);
-          }
           return _this.recordStore[args.from].where((
             obj = {},
             obj["" + args["with"]] = _this[args.of],
@@ -205,9 +198,6 @@ module.exports = BaseModel = (function() {
     args = _.assign(defaults, userArgs);
     return this[name] = (function(_this) {
       return function() {
-        if (_this.recordStore[args.from] == null) {
-          console.log(args.from);
-        }
         return _this.recordStore[args.from].find(_this[args.by]);
       };
     })(this);
@@ -296,10 +286,13 @@ var _, isTimeAttribute, parseJSON, transformKeys;
 _ = window._;
 
 transformKeys = function(attributes, transformFn) {
-  return _.transform(_.keys(attributes), function(result, key) {
+  var result;
+  result = {};
+  _.each(_.keys(attributes), function(key) {
     result[transformFn(key)] = attributes[key];
     return true;
   });
+  return result;
 };
 
 parseJSON = function(json) {
@@ -407,6 +400,7 @@ module.exports = function(RestfulClient, $q) {
     };
 
     BaseRecordsInterface.prototype.find = function(q) {
+      var chain;
       if (q === null || q === void 0) {
         return void 0;
       } else if (_.isNumber(q)) {
@@ -422,7 +416,16 @@ module.exports = function(RestfulClient, $q) {
           return this.findByIds(q);
         }
       } else {
-        return this.collection.find(q);
+        chain = this.collection.chain();
+        _.each(_.keys(q), function(key) {
+          var obj;
+          return chain = chain.find((
+            obj = {},
+            obj["" + key] = q[key],
+            obj
+          ));
+        });
+        return chain.data();
       }
     };
 
@@ -431,7 +434,13 @@ module.exports = function(RestfulClient, $q) {
     };
 
     BaseRecordsInterface.prototype.findByKey = function(key) {
-      return this.collection.by('key', key);
+      if (this.collection.constraints.unique['key'] != null) {
+        return this.collection.by('key', key);
+      } else {
+        return this.collection.findOne({
+          key: key
+        });
+      }
     };
 
     BaseRecordsInterface.prototype.findByIds = function(ids) {
@@ -448,10 +457,6 @@ module.exports = function(RestfulClient, $q) {
           '$in': keys
         }
       });
-    };
-
-    BaseRecordsInterface.prototype.where = function(params) {
-      return this.collection.chain().find(params).data();
     };
 
     return BaseRecordsInterface;

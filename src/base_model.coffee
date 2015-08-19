@@ -113,7 +113,6 @@ module.exports =
         viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
 
         # create the view which references the records
-        console.log args.from unless @recordStore[args.from]?
         @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
         @views[viewName].applyFind("#{args.with}": @[args.of])
         @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
@@ -126,7 +125,6 @@ module.exports =
       # adds a simple Records.collection.where with no db overhead
       addFindMethod = =>
         @[name] = =>
-          console.log args.from unless @recordStore[args.from]?
           @recordStore[args.from].where("#{args.with}": @[args.of])
 
       if args.dynamicView
@@ -134,7 +132,7 @@ module.exports =
       else
         addFindMethod()
 
-    belongsTo: (name, userArgs) =>
+    belongsTo: (name, userArgs) ->
       defaults =
         from: name+'s'
         by: name+'Id'
@@ -142,7 +140,6 @@ module.exports =
       args = _.assign defaults, userArgs
 
       @[name] = =>
-        console.log args.from unless @recordStore[args.from]?
         @recordStore[args.from].find(@[args.by])
 
     translationOptions: ->
