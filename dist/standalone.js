@@ -1,5 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.AngularRecordStore = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var BaseModel, _, inCollection, isTimeAttribute, moment,
+var BaseModel, _, isTimeAttribute, moment,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 _ = window._;
@@ -8,10 +8,6 @@ moment = window.moment;
 
 isTimeAttribute = function(attributeName) {
   return /At$/.test(attributeName);
-};
-
-inCollection = function(record) {
-  return record.hasOwnProperty('$loki');
 };
 
 module.exports = BaseModel = (function() {
@@ -37,6 +33,7 @@ module.exports = BaseModel = (function() {
     }
     this.save = bind(this.save, this);
     this.destroy = bind(this.destroy, this);
+    this.inCollection = bind(this.inCollection, this);
     this.processing = false;
     this.attributeNames = [];
     this.setErrors();
@@ -57,7 +54,10 @@ module.exports = BaseModel = (function() {
     if (this.relationships != null) {
       this.buildRelationships();
     }
+    this.afterConstruction();
   }
+
+  BaseModel.prototype.afterConstruction = function() {};
 
   BaseModel.prototype.defaultValues = function() {
     return {};
@@ -76,10 +76,14 @@ module.exports = BaseModel = (function() {
     return cloneRecord;
   };
 
+  BaseModel.prototype.inCollection = function() {
+    return this['$loki'];
+  };
+
   BaseModel.prototype.update = function(attributes) {
     this.attributeNames = _.union(this.attributeNames, _.keys(attributes));
     _.assign(this, attributes);
-    if (inCollection(this)) {
+    if (this.inCollection()) {
       return this.recordsInterface.collection.update(this);
     }
   };
@@ -218,13 +222,15 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.destroy = function() {
-    if (inCollection(this)) {
+    if (this.inCollection()) {
+      console.log('removing record from collection', this);
       this.recordsInterface.collection.remove(this);
     }
     if (!this.isNew()) {
       this.processing = true;
       return this.remote.destroy(this.keyOrId()).then((function(_this) {
         return function() {
+          console.log('destroy successful');
           return _this.processing = false;
         };
       })(this));

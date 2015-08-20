@@ -4,9 +4,6 @@ moment = window.moment
 isTimeAttribute = (attributeName) ->
   /At$/.test(attributeName)
 
-inCollection = (record) ->
-  record.hasOwnProperty('$loki')
-
 module.exports =
   class BaseModel
     @singular: 'undefinedSingular'
@@ -42,7 +39,9 @@ module.exports =
       @update(attributes)
 
       @buildRelationships() if @relationships?
+      @afterConstruction()
 
+    afterConstruction: ->
 
     defaultValues: ->
       {}
@@ -55,12 +54,16 @@ module.exports =
       cloneRecord.clonedFrom = @
       cloneRecord
 
+    inCollection: =>
+      @['$loki']# and @recordsInterface.collection.get(@['$loki'])
+
     update: (attributes) ->
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
 
       # calling update on the collection just updates views/indexes
-      @recordsInterface.collection.update(@) if inCollection(@)
+      #console.log 'update collection: inCollection?, record', @constructor.plural, inCollection(@), @
+      @recordsInterface.collection.update(@) if @inCollection()
 
     attributeIsModified: (attributeName) ->
       return false unless @clonedFrom?
@@ -154,11 +157,13 @@ module.exports =
         @id
 
     destroy: =>
-      if inCollection(@)
+      if @inCollection()
+        console.log 'removing record from collection', @
         @recordsInterface.collection.remove(@)
       unless @isNew()
         @processing = true
         @remote.destroy(@keyOrId()).then =>
+          console.log 'destroy successful'
           @processing = false
 
     save: =>
