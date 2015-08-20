@@ -174,7 +174,7 @@ module.exports = BaseModel = (function() {
       return function() {
         return _this[name] = function() {
           var obj;
-          return _this.recordStore[args.from].where((
+          return _this.recordStore[args.from].find((
             obj = {},
             obj["" + args["with"]] = _this[args.of],
             obj
@@ -419,11 +419,12 @@ module.exports = function(RestfulClient, $q) {
         chain = this.collection.chain();
         _.each(_.keys(q), function(key) {
           var obj;
-          return chain = chain.find((
+          chain.find((
             obj = {},
             obj["" + key] = q[key],
             obj
           ));
+          return true;
         });
         return chain.data();
       }
