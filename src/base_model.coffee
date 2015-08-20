@@ -125,7 +125,7 @@ module.exports =
       # adds a simple Records.collection.where with no db overhead
       addFindMethod = =>
         @[name] = =>
-          @recordStore[args.from].where("#{args.with}": @[args.of])
+          @recordStore[args.from].find("#{args.with}": @[args.of])
 
       if args.dynamicView
         addDynamicView()
