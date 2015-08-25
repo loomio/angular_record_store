@@ -1,14 +1,12 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.AngularRecordStore = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var BaseModel, _, isTimeAttribute, moment,
+var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 _ = window._;
 
 moment = window.moment;
 
-isTimeAttribute = function(attributeName) {
-  return /At$/.test(attributeName);
-};
+utils = require('./utils.coffee');
 
 module.exports = BaseModel = (function() {
   BaseModel.singular = 'undefinedSingular';
@@ -95,7 +93,7 @@ module.exports = BaseModel = (function() {
     }
     original = this.clonedFrom[attributeName];
     current = this[attributeName];
-    if (isTimeAttribute(attributeName)) {
+    if (utils.isTimeAttribute(attributeName)) {
       return !(original === current || current.isSame(original));
     } else {
       return original !== current;
@@ -131,7 +129,11 @@ module.exports = BaseModel = (function() {
     paramKey = _.snakeCase(this.constructor.serializationRoot || this.constructor.singular);
     _.each(this.constructor.serializableAttributes || this.attributeNames, (function(_this) {
       return function(attributeName) {
-        data[_.snakeCase(attributeName)] = _this[_.camelCase(attributeName)];
+        if (utils.isTimeAttribute(attributeName)) {
+          data[_.snakeCase(attributeName)] = _this[attributeName].utc().format();
+        } else {
+          data[_.snakeCase(attributeName)] = _this[attributeName];
+        }
         return true;
       };
     })(this));
@@ -223,22 +225,19 @@ module.exports = BaseModel = (function() {
 
   BaseModel.prototype.destroy = function() {
     if (this.inCollection()) {
-      console.log('removing record from collection', this);
       this.recordsInterface.collection.remove(this);
     }
-    if (!this.isNew()) {
-      this.processing = true;
-      return this.remote.destroy(this.keyOrId()).then((function(_this) {
-        return function() {
-          console.log('destroy successful');
-          return _this.processing = false;
-        };
-      })(this));
-    }
+    this.processing = true;
+    return this.remote.destroy(this.keyOrId()).then((function(_this) {
+      return function() {
+        return _this.processing = false;
+      };
+    })(this));
   };
 
   BaseModel.prototype.save = function() {
     var saveFailure, saveSuccess;
+    this.processing = true;
     saveSuccess = (function(_this) {
       return function(records) {
         _this.processing = false;
@@ -253,7 +252,6 @@ module.exports = BaseModel = (function() {
         throw errors;
       };
     })(this);
-    this.processing = true;
     if (this.isNew()) {
       return this.remote.create(this.serialize()).then(saveSuccess, saveFailure);
     } else {
@@ -286,40 +284,12 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{}],2:[function(require,module,exports){
-var _, isTimeAttribute, parseJSON, transformKeys;
+},{"./utils.coffee":6}],2:[function(require,module,exports){
+var _, utils;
 
 _ = window._;
 
-transformKeys = function(attributes, transformFn) {
-  var result;
-  result = {};
-  _.each(_.keys(attributes), function(key) {
-    result[transformFn(key)] = attributes[key];
-    return true;
-  });
-  return result;
-};
-
-parseJSON = function(json) {
-  var attributes;
-  attributes = transformKeys(json, _.camelCase);
-  _.each(_.keys(attributes), function(name) {
-    if (attributes[name] != null) {
-      if (isTimeAttribute(name) && moment(attributes[name]).isValid()) {
-        attributes[name] = moment(attributes[name]);
-      } else {
-        attributes[name] = attributes[name];
-      }
-    }
-    return true;
-  });
-  return attributes;
-};
-
-isTimeAttribute = function(attributeName) {
-  return /At$/.test(attributeName);
-};
+utils = require('./utils.coffee');
 
 module.exports = function(RestfulClient, $q) {
   var BaseRecordsInterface;
@@ -375,7 +345,7 @@ module.exports = function(RestfulClient, $q) {
     };
 
     BaseRecordsInterface.prototype.importJSON = function(json) {
-      return this["import"](parseJSON(json));
+      return this["import"](utils.parseJSON(json));
     };
 
     BaseRecordsInterface.prototype["import"] = function(attributes) {
@@ -472,7 +442,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{}],3:[function(require,module,exports){
+},{"./utils.coffee":6}],3:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -645,6 +615,49 @@ module.exports = function($http, $upload) {
 
   })();
 };
+
+
+},{}],6:[function(require,module,exports){
+var Utils;
+
+module.exports = new (Utils = (function() {
+  function Utils() {}
+
+  Utils.prototype.transformKeys = function(attributes, transformFn) {
+    var result;
+    result = {};
+    _.each(_.keys(attributes), function(key) {
+      result[transformFn(key)] = attributes[key];
+      return true;
+    });
+    return result;
+  };
+
+  Utils.prototype.parseJSON = function(json) {
+    var attributes;
+    attributes = this.transformKeys(json, _.camelCase);
+    _.each(_.keys(attributes), (function(_this) {
+      return function(name) {
+        if (attributes[name] != null) {
+          if (_this.isTimeAttribute(name) && moment(attributes[name]).isValid()) {
+            attributes[name] = moment(attributes[name]);
+          } else {
+            attributes[name] = attributes[name];
+          }
+        }
+        return true;
+      };
+    })(this));
+    return attributes;
+  };
+
+  Utils.prototype.isTimeAttribute = function(attributeName) {
+    return /At$/.test(attributeName);
+  };
+
+  return Utils;
+
+})());
 
 
 },{}]},{},[3])(3)

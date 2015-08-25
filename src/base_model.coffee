@@ -1,8 +1,7 @@
 _ = window._
 moment = window.moment
 
-isTimeAttribute = (attributeName) ->
-  /At$/.test(attributeName)
+utils = require('./utils.coffee')
 
 module.exports =
   class BaseModel
@@ -61,15 +60,13 @@ module.exports =
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
 
-      # calling update on the collection just updates views/indexes
-      #console.log 'update collection: inCollection?, record', @constructor.plural, inCollection(@), @
       @recordsInterface.collection.update(@) if @inCollection()
 
     attributeIsModified: (attributeName) ->
       return false unless @clonedFrom?
       original = @clonedFrom[attributeName]
       current = @[attributeName]
-      if isTimeAttribute(attributeName)
+      if utils.isTimeAttribute(attributeName)
         !(original == current or current.isSame(original))
       else
         original != current
@@ -90,8 +87,12 @@ module.exports =
       wrapper = {}
       data = {}
       paramKey = _.snakeCase(@constructor.serializationRoot or @constructor.singular)
+
       _.each @constructor.serializableAttributes or @attributeNames, (attributeName) =>
-        data[_.snakeCase(attributeName)] = @[_.camelCase(attributeName)]
+        if utils.isTimeAttribute(attributeName)
+          data[_.snakeCase(attributeName)] = @[attributeName].utc().format()
+        else
+          data[_.snakeCase(attributeName)] = @[attributeName]
         true # so if the value is false we don't break the loop
       wrapper[paramKey] = data
       wrapper
@@ -158,15 +159,15 @@ module.exports =
 
     destroy: =>
       if @inCollection()
-        console.log 'removing record from collection', @
         @recordsInterface.collection.remove(@)
-      unless @isNew()
-        @processing = true
-        @remote.destroy(@keyOrId()).then =>
-          console.log 'destroy successful'
-          @processing = false
+
+      @processing = true
+      @remote.destroy(@keyOrId()).then =>
+        @processing = false
 
     save: =>
+      @processing = true
+
       saveSuccess = (records) =>
         @processing = false
         @clonedFrom = undefined
@@ -177,7 +178,6 @@ module.exports =
         @setErrors errors
         throw errors
 
-      @processing = true
       if @isNew()
         @remote.create(@serialize()).then(saveSuccess, saveFailure)
       else

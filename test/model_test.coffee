@@ -106,14 +106,17 @@ describe 'BaseModel', ->
     beforeEach ->
       dog = recordStore.doggies.create(id: 1, name: 'ruff', isFluffy: true, ownerId: 1)
       flea = recordStore.fleas.create(dogId: 1)
-      person = recordStore.people.create(id: 1, name: 'Curella', isWacky: 'always')
+      person = recordStore.people.create(id: 1, name: 'Curella', isWacky: 'always', bornAt: moment("2010-10-20 4:30 +0000", "YYYY-MM-DD HH:mm Z"))
 
     it 'only serializes specified attributes', ->
       expect(_.keys dog.serialize()['dog']).toEqual(['id', 'name', 'owner_id'])
       expect(_.keys flea.serialize()['flea']).toEqual(['letter', 'biting'])
 
     it 'serializes all attributesNames if no serializableAttributes specified', ->
-      expect(_.keys person.serialize()['person']).toEqual(['age', 'name', 'id', 'is_wacky'])
+      expect(_.keys person.serialize()['person']).toEqual(['age', 'name', 'id', 'is_wacky', 'born_at'])
+
+    it 'formats moments into ISO date format', ->
+      expect(person.serialize()['person']['born_at']).toEqual("2010-10-20T04:30:00+00:00")
 
 describe 'recordsInterface', ->
   beforeEach ->
@@ -158,9 +161,6 @@ describe 'recordsInterface', ->
 
     it "momentizes attrbutes ending in _at", ->
       expect(dog.createdAt).toEqual(moment("2015-08-13T00:00:00Z"))
-
-
-
 
   describe 'find', ->
     beforeEach ->

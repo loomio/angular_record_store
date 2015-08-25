@@ -1,26 +1,6 @@
 _ = window._
 
-transformKeys = (attributes, transformFn) ->
-  result = {}
-  _.each _.keys(attributes), (key) ->
-    result[transformFn(key)] = attributes[key]
-    true
-  result
-
-parseJSON = (json) ->
-  attributes = transformKeys(json, _.camelCase)
-  _.each _.keys(attributes), (name) ->
-    if attributes[name]?
-      if isTimeAttribute(name) and moment(attributes[name]).isValid()
-        attributes[name] = moment(attributes[name])
-      else
-        attributes[name] = attributes[name]
-    true
-  attributes
-
-isTimeAttribute = (attributeName) ->
-  /At$/.test(attributeName)
-
+utils = require('./utils.coffee')
 
 module.exports = (RestfulClient, $q) ->
   class BaseRecordsInterface
@@ -56,7 +36,7 @@ module.exports = (RestfulClient, $q) ->
       @remote.fetch(args)
 
     importJSON: (json) ->
-      @import(parseJSON(json))
+      @import(utils.parseJSON(json))
 
     import: (attributes) ->
       record = @find(attributes.key or attributes.id)
