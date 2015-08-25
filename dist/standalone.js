@@ -129,10 +129,13 @@ module.exports = BaseModel = (function() {
     paramKey = _.snakeCase(this.constructor.serializationRoot || this.constructor.singular);
     _.each(this.constructor.serializableAttributes || this.attributeNames, (function(_this) {
       return function(attributeName) {
-        if (utils.isTimeAttribute(attributeName)) {
-          data[_.snakeCase(attributeName)] = _this[attributeName].utc().format();
+        var camelName, snakeName;
+        snakeName = _.snakeCase(attributeName);
+        camelName = _.camelCase(attributeName);
+        if (utils.isTimeAttribute(camelName)) {
+          data[snakeName] = _this[camelName].utc().format();
         } else {
-          data[_.snakeCase(attributeName)] = _this[attributeName];
+          data[snakeName] = _this[camelName];
         }
         return true;
       };

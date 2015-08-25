@@ -89,11 +89,14 @@ module.exports =
       paramKey = _.snakeCase(@constructor.serializationRoot or @constructor.singular)
 
       _.each @constructor.serializableAttributes or @attributeNames, (attributeName) =>
-        if utils.isTimeAttribute(attributeName)
-          data[_.snakeCase(attributeName)] = @[attributeName].utc().format()
+        snakeName = _.snakeCase(attributeName)
+        camelName = _.camelCase(attributeName)
+        if utils.isTimeAttribute(camelName)
+          data[snakeName] = @[camelName].utc().format()
         else
-          data[_.snakeCase(attributeName)] = @[attributeName]
+          data[snakeName] = @[camelName]
         true # so if the value is false we don't break the loop
+
       wrapper[paramKey] = data
       wrapper
 
