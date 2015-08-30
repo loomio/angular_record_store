@@ -61,4 +61,5 @@ To maybe do:
 
 To find out how to use this for real, you should read the files in /test
 
+To compile files from src to dist: npm run build
 To run the tests: npm test

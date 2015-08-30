@@ -574,14 +574,17 @@ module.exports = function($http, $upload) {
       return $http.post(this.customPath(path), params).then(this.onSuccess, this.onFailure);
     };
 
-    RestfulClient.prototype.upload = function(path, file) {
-      return $upload.upload({
+    RestfulClient.prototype.upload = function(path, file, params) {
+      if (params == null) {
+        params = {};
+      }
+      return $upload.upload(_.merge(params, {
         url: this.customPath(path),
         headers: {
           'Content-Type': false
         },
         file: file
-      });
+      }));
     };
 
     RestfulClient.prototype.postMember = function(keyOrId, action, params) {
