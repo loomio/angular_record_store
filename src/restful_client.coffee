@@ -51,8 +51,8 @@ module.exports = ($http, $upload) ->
     post: (path, params) ->
       $http.post(@customPath(path), params).then @onSuccess, @onFailure
 
-    upload: (path, file) ->
-      $upload.upload
+    upload: (path, file, params = {}) ->
+      $upload.upload _.merge params,
         url: @customPath(path)
         headers: { 'Content-Type': false }
         file: file
