@@ -148,6 +148,15 @@ describe 'recordsInterface', ->
       expect(dog.isFluffy).toBe(true)
       expect(recordStore.doggies.find(43)).toBe(dog)
 
+  describe 'remove', ->
+    beforeEach ->
+      dog = recordStore.doggies.create(id: 43)
+
+    it 'removes record from recordStore', ->
+      dog.remove()
+      expect(recordStore.doggies.find(43)).toBe(undefined)
+
+
   describe 'importJSON', ->
     dog = null
 

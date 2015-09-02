@@ -160,11 +160,13 @@ module.exports =
       else
         @id
 
-    destroy: =>
+    remove: =>
       if @inCollection()
         @recordsInterface.collection.remove(@)
 
+    destroy: =>
       @processing = true
+      @remove()
       @remote.destroy(@keyOrId()).then =>
         @processing = false
 

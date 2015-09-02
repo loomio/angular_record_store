@@ -31,6 +31,7 @@ module.exports = BaseModel = (function() {
     }
     this.save = bind(this.save, this);
     this.destroy = bind(this.destroy, this);
+    this.remove = bind(this.remove, this);
     this.inCollection = bind(this.inCollection, this);
     this.processing = false;
     this.attributeNames = [];
@@ -226,11 +227,15 @@ module.exports = BaseModel = (function() {
     }
   };
 
-  BaseModel.prototype.destroy = function() {
+  BaseModel.prototype.remove = function() {
     if (this.inCollection()) {
-      this.recordsInterface.collection.remove(this);
+      return this.recordsInterface.collection.remove(this);
     }
+  };
+
+  BaseModel.prototype.destroy = function() {
     this.processing = true;
+    this.remove();
     return this.remote.destroy(this.keyOrId()).then((function(_this) {
       return function() {
         return _this.processing = false;
