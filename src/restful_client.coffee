@@ -52,10 +52,10 @@ module.exports = ($http, $upload) ->
       $http.post(@customPath(path), params).then @onSuccess, @onFailure
 
     upload: (path, file, params = {}) ->
-      $upload.upload _.merge params,
+      $upload.upload(_.merge params,
         url: @customPath(path)
         headers: { 'Content-Type': false }
-        file: file
+        file: file).then @onSuccess, @onFailure
 
     postMember: (keyOrId, action, params) ->
       $http.post(@memberPath(keyOrId, action), params).then @onSuccess, @onFailure

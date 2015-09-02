@@ -589,7 +589,7 @@ module.exports = function($http, $upload) {
           'Content-Type': false
         },
         file: file
-      }));
+      })).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.postMember = function(keyOrId, action, params) {
