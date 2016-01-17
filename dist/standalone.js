@@ -508,7 +508,7 @@ var _;
 
 _ = window._;
 
-module.exports = function($http, $upload) {
+module.exports = function($http, Upload) {
   var RestfulClient;
   return RestfulClient = (function() {
     RestfulClient.prototype.apiPrefix = "api/v1";
@@ -584,7 +584,7 @@ module.exports = function($http, $upload) {
       if (params == null) {
         params = {};
       }
-      upload = $upload.upload(_.merge(params, {
+      upload = Upload.upload(_.merge(params, {
         url: this.customPath(path),
         headers: {
           'Content-Type': false

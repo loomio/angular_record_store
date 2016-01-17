@@ -1,6 +1,6 @@
 _ = window._
 
-module.exports = ($http, $upload) ->
+module.exports = ($http, Upload) ->
   class RestfulClient
     apiPrefix: "api/v1"
 
@@ -52,7 +52,7 @@ module.exports = ($http, $upload) ->
       $http.post(@customPath(path), params).then @onSuccess, @onFailure
 
     upload: (path, file, params = {}, onProgress) ->
-      upload = $upload.upload(_.merge(params,
+      upload = Upload.upload(_.merge(params,
         url: @customPath(path)
         headers: { 'Content-Type': false }
         file: file)
