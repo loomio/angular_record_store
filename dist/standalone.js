@@ -603,6 +603,10 @@ module.exports = function($http, Upload) {
       return $http.patch(this.memberPath(keyOrId, action), params).then(this.onSuccess, this.onFailure);
     };
 
+    RestfulClient.prototype.putMember = function(keyOrId, action, params) {
+      return $http.put(this.memberPath(keyOrId, action), params).then(this.onSuccess, this.onFailure);
+    };
+
     RestfulClient.prototype.getMember = function(keyOrId, action) {
       return $http.get(this.memberPath(keyOrId, action)).then(this.onSuccess, this.onFailure);
     };

@@ -66,6 +66,9 @@ module.exports = ($http, Upload) ->
     patchMember: (keyOrId, action, params) ->
       $http.patch(@memberPath(keyOrId, action), params).then @onSuccess, @onFailure
 
+    putMember: (keyOrId, action, params) ->
+      $http.put(@memberPath(keyOrId, action), params).then @onSuccess, @onFailure
+
     getMember: (keyOrId, action) ->
       $http.get(@memberPath(keyOrId, action)).then @onSuccess, @onFailure
 
