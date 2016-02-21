@@ -24,6 +24,9 @@ module.exports = (RestfulClient, $q) ->
         console.log('request failure!', response)
         throw response
 
+    all: ->
+      @collection.data
+
     build: (attributes = {}) ->
       record = new @model @, attributes
 
@@ -92,4 +95,3 @@ module.exports = (RestfulClient, $q) ->
 
     findByKeys: (keys) ->
       @collection.find(key: {'$in': keys})
-

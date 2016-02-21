@@ -330,6 +330,10 @@ module.exports = function(RestfulClient, $q) {
       };
     };
 
+    BaseRecordsInterface.prototype.all = function() {
+      return this.collection.data;
+    };
+
     BaseRecordsInterface.prototype.build = function(attributes) {
       var record;
       if (attributes == null) {
