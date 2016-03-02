@@ -26,6 +26,45 @@ module.exports =
     # override this if your apiEndPoint is not the model.plural
     @apiEndPoint: null
 
+    # provides a method which returns a hash with previous and next values.
+    # this function takes a hash of options, of which first, last, and pageSize are required.
+    # first and last refer to fields on the object, while pageSize is a static value.
+    # Example usage:
+    # # kennel_model.coffee
+    # doggyPagination: @paginate({first: 'firstDogId', last: 'lastDogId', pageSize: 20})
+    #
+    # # elsewhere
+    # kennel.doggyPagination(40)
+    # => { prev: 20, next: 60 }
+    #
+    # first: the name of the field containing the first value of the series.
+    # for exmaple, 'firstDogId' would mean that the value of kennel.firstDogId is first index in the series
+    # NB: defaults to 0.
+    #
+    # last: the field containing the last value of the series.
+    # for example, 'lastDogId' would mean the value of kennel.lastDogId is the last index in the series.
+    # NB: required
+    #
+    # current: passed into the resulting function,
+    #
+    # pageSize: the size of a page.
+    # for example, with a pageSize of 10, and a current value of 15, calling `paginate(15)`
+    # would return {prev: 5, next: 25}
+    # TODO: explain this thing better
+
+    @paginate: (opts = {}) ->
+      if !(opts.last and opts.pageSize)
+        console.log('Pagination missing required options! Please provide last, and pageSize params')
+      (current, mapFn = ((v, k) -> [k, v])) ->
+        [first, last, pageSize]  = [@[opts.first] or 0, @[opts.last], opts.pageSize]
+        current        = current or first
+        result         = {}
+
+        result.prev = _.max [current - pageSize, first] if current > first
+        result.next = current + pageSize                if current + pageSize <= last
+
+        _.object _.map result, mapFn
+
     constructor: (recordsInterface, attributes = {}) ->
       @processing = false # not returning/throwing on already processing rn
       @attributeNames = []
