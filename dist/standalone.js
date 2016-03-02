@@ -512,7 +512,7 @@ var _;
 
 _ = window._;
 
-module.exports = function($http, Upload) {
+module.exports = function($http, $upload) {
   var RestfulClient;
   return RestfulClient = (function() {
     RestfulClient.prototype.apiPrefix = "api/v1";
@@ -583,20 +583,18 @@ module.exports = function($http, Upload) {
       return $http.post(this.customPath(path), params).then(this.onSuccess, this.onFailure);
     };
 
-    RestfulClient.prototype.upload = function(path, file, params, onProgress) {
+    RestfulClient.prototype.upload = function(path, file, params) {
       var upload;
       if (params == null) {
         params = {};
       }
-      upload = Upload.upload(_.merge(params, {
+      return upload = $upload.upload(_.merge(params, {
         url: this.customPath(path),
         headers: {
           'Content-Type': false
         },
         file: file
-      })).progress(onProgress);
-      upload.then(this.onSuccess, this.onFailure);
-      return upload;
+      })).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.postMember = function(keyOrId, action, params) {
