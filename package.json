@@ -1,6 +1,6 @@
 {
   "name": "angular_record_store",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "An ActiveRecord-like ORM built ontop of Loki-js",
   "main": "src/index.coffee",
   "scripts": {
@@ -33,7 +33,7 @@
     "coffeeify": "^1.1.0",
     "lodash": "^3.10.1",
     "moment": "^2.10.6",
-    "ng-file-upload": "6.1.0"
+    "ng-file-upload": "3.2.4"
   },
   "devDependencies": {
     "angular": "^1.4.3",
