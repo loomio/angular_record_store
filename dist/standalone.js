@@ -25,6 +25,33 @@ module.exports = BaseModel = (function() {
 
   BaseModel.apiEndPoint = null;
 
+  BaseModel.paginate = function(opts) {
+    if (opts == null) {
+      opts = {};
+    }
+    if (!(opts.last && opts.pageSize)) {
+      console.log('Pagination missing required options! Please provide last, and pageSize params');
+    }
+    return function(current, mapFn) {
+      var first, last, pageSize, ref, result;
+      if (mapFn == null) {
+        mapFn = (function(v, k) {
+          return [k, v];
+        });
+      }
+      ref = [this[opts.first] || 0, this[opts.last], opts.pageSize], first = ref[0], last = ref[1], pageSize = ref[2];
+      current = current || first;
+      result = {};
+      if (current > first) {
+        result.prev = _.max([current - pageSize, first]);
+      }
+      if (current + pageSize <= last) {
+        result.next = current + pageSize;
+      }
+      return _.object(_.map(result, mapFn));
+    };
+  };
+
   function BaseModel(recordsInterface, attributes) {
     if (attributes == null) {
       attributes = {};
