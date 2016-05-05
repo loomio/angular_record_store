@@ -96,6 +96,9 @@ module.exports =
       @['$loki']# and @recordsInterface.collection.get(@['$loki'])
 
     update: (attributes) ->
+      @baseUpdate(attributes)
+
+    baseUpdate: (attributes) ->
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
 
