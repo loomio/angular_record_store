@@ -116,7 +116,7 @@ describe 'BaseModel', ->
       expect(_.keys person.serialize()['person']).toEqual(['age', 'name', 'id', 'is_wacky', 'born_at'])
 
     it 'formats moments into ISO date format', ->
-      acceptable = ['2010-10-20T04:30:00+00:00', '2010-10-20T04:30:00+00:00Z']
+      acceptable = ['2010-10-20T04:30:00+00:00', '2010-10-20T04:30:00Z']
       expect(acceptable).toContain(person.serialize()['person']['born_at'])
 
 describe 'recordsInterface', ->
