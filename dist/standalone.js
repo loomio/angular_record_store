@@ -57,7 +57,7 @@ module.exports = BaseModel = (function() {
       attributes = {};
     }
     this.save = bind(this.save, this);
-    this.afterDestroy = bind(this.afterDestroy, this);
+    this.beforeDestroy = bind(this.beforeDestroy, this);
     this.destroy = bind(this.destroy, this);
     this.remove = bind(this.remove, this);
     this.inCollection = bind(this.inCollection, this);
@@ -267,16 +267,16 @@ module.exports = BaseModel = (function() {
 
   BaseModel.prototype.destroy = function() {
     this.processing = true;
+    this.beforeDestroy();
     this.remove();
-    this.remote.destroy(this.keyOrId()).then((function(_this) {
+    return this.remote.destroy(this.keyOrId()).then((function(_this) {
       return function() {
         return _this.processing = false;
       };
     })(this));
-    return this.afterDestroy();
   };
 
-  BaseModel.prototype.afterDestroy = function() {};
+  BaseModel.prototype.beforeDestroy = function() {};
 
   BaseModel.prototype.save = function() {
     var saveFailure, saveSuccess;

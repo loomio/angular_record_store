@@ -208,12 +208,12 @@ module.exports =
 
     destroy: =>
       @processing = true
+      @beforeDestroy()
       @remove()
       @remote.destroy(@keyOrId()).then =>
         @processing = false
-      @afterDestroy()
 
-    afterDestroy: =>
+    beforeDestroy: =>
 
     save: =>
       @processing = true
