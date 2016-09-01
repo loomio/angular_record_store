@@ -211,6 +211,9 @@ module.exports =
       @remove()
       @remote.destroy(@keyOrId()).then =>
         @processing = false
+      @afterDestroy()
+
+    afterDestroy: =>
 
     save: =>
       @processing = true
