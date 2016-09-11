@@ -34,7 +34,7 @@ class DogModel extends BaseModel
       sortBy: 'letter'    # optional sorting (not default acutally)
       sortDesc: true      # But wait there's more! Chain anything from http://lokijs.org/#/docs#views
 
-    @belongsTo 'owner',   # creates dog.owner() 
+    @belongsTo 'owner',   # creates dog.owner()
       from: 'people'      # owner is a person record in the people collection
       by: 'ownerId'       # by: 'ownerId', of: 'id' are the defaults
       of: 'id'            # in this case. only specified here as example
@@ -46,7 +46,7 @@ class DogModel extends BaseModel
     _.each _.sample(@fleas(), 5), (flea) -> # lodash is available for you
       flea.awaken()
 
-``` 
+```
 
 Other things I really like about my library:
   - Built specifically to work with Active Model Serializer with rails snake_case -> camel case
@@ -63,3 +63,9 @@ To find out how to use this for real, you should read the files in /test
 
 To compile files from src to dist: npm run build
 To run the tests: npm test
+
+to publish a new version (eg: 5.4.2)
+update package.json with the new version.
+git commit -m "update with my new stuff and version"
+git tag 5.4.2
+git push origin master --tags
