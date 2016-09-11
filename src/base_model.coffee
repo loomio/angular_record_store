@@ -203,14 +203,20 @@ module.exports =
         @id
 
     remove: =>
+      @beforeRemove()
       if @inCollection()
         @recordsInterface.collection.remove(@)
 
     destroy: =>
       @processing = true
+      @beforeDestroy()
       @remove()
       @remote.destroy(@keyOrId()).then =>
         @processing = false
+
+    beforeDestroy: =>
+
+    beforeRemove: =>
 
     save: =>
       @processing = true

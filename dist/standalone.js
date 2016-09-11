@@ -57,6 +57,8 @@ module.exports = BaseModel = (function() {
       attributes = {};
     }
     this.save = bind(this.save, this);
+    this.beforeRemove = bind(this.beforeRemove, this);
+    this.beforeDestroy = bind(this.beforeDestroy, this);
     this.destroy = bind(this.destroy, this);
     this.remove = bind(this.remove, this);
     this.inCollection = bind(this.inCollection, this);
@@ -259,6 +261,7 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.remove = function() {
+    this.beforeRemove();
     if (this.inCollection()) {
       return this.recordsInterface.collection.remove(this);
     }
@@ -266,6 +269,7 @@ module.exports = BaseModel = (function() {
 
   BaseModel.prototype.destroy = function() {
     this.processing = true;
+    this.beforeDestroy();
     this.remove();
     return this.remote.destroy(this.keyOrId()).then((function(_this) {
       return function() {
@@ -273,6 +277,10 @@ module.exports = BaseModel = (function() {
       };
     })(this));
   };
+
+  BaseModel.prototype.beforeDestroy = function() {};
+
+  BaseModel.prototype.beforeRemove = function() {};
 
   BaseModel.prototype.save = function() {
     var saveFailure, saveSuccess;
