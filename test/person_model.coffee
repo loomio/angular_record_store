@@ -12,3 +12,7 @@ module.exports = (BaseModel) ->
       @hasMany 'dogs',
         from: 'doggies'
         with: 'ownerId'
+
+    nameAndAge: ->
+      @recordStore.memoize =>
+        "age #{@age} name #{@name}"

@@ -41,6 +41,17 @@ describe 'BaseModel', ->
   beforeEach ->
     sharedSetup()
 
+  describe 'memoization', ->
+    homer = null
+    beforeEach ->
+      homer = recordStore.people.create(id: 1, age: 23, name: 'homer')
+    it 'memoizes', ->
+      expect(homer.nameAndAge()).toEqual('age 23 name homer')
+      homer.age = 44
+      expect(homer.nameAndAge()).toEqual('age 23 name homer')
+      recordStore.import({})
+      expect(homer.nameAndAge()).toEqual('age 44 name homer')
+
   describe 'class variables', ->
     it 'indices', ->
       expect(DogModel.indices).toEqual(['ownerId'])

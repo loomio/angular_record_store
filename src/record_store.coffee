@@ -5,6 +5,7 @@ module.exports =
     constructor: (db) ->
       @db = db
       @collectionNames = []
+      @cache = {}
 
     addRecordsInterface: (recordsInterfaceClass) ->
       recordsInterface = new recordsInterfaceClass(@)
@@ -19,4 +20,11 @@ module.exports =
         if data[snakeName]?
           _.each data[snakeName], (recordData) =>
             @[camelName].importJSON(recordData)
+      @cache = {}
       data
+
+    memoize: (func) ->
+      key = func.toString()
+      unless @cache[key]
+        @cache[key] = _.memoize(func)
+      @cache[key]()
