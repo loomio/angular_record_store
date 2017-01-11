@@ -86,7 +86,10 @@ module.exports =
 
     clone: ->
       cloneAttributes = _.transform @attributeNames, (clone, attr) =>
-        clone[attr] = @[attr]
+        if _.isArray(@[attr])
+          clone[attr] = @[attr].slice(0)
+        else
+          clone[attr] = @[attr]
         true
       cloneRecord = new @constructor(@recordsInterface, cloneAttributes)
       cloneRecord.clonedFrom = @

@@ -95,7 +95,11 @@ module.exports = BaseModel = (function() {
     var cloneAttributes, cloneRecord;
     cloneAttributes = _.transform(this.attributeNames, (function(_this) {
       return function(clone, attr) {
-        clone[attr] = _this[attr];
+        if (_.isArray(_this[attr])) {
+          clone[attr] = _this[attr].slice(0);
+        } else {
+          clone[attr] = _this[attr];
+        }
         return true;
       };
     })(this));
