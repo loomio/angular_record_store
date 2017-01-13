@@ -73,10 +73,9 @@ module.exports =
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
       Object.defineProperty(@, 'remote', value: recordsInterface.remote, enumerable: false)
 
+      @buildRelationships()
       @update(@defaultValues())
       @update(attributes)
-
-      @buildRelationships() if @relationships?
       @afterConstruction()
 
     afterConstruction: ->

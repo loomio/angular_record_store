@@ -77,11 +77,9 @@ module.exports = BaseModel = (function() {
       value: recordsInterface.remote,
       enumerable: false
     });
+    this.buildRelationships();
     this.update(this.defaultValues());
     this.update(attributes);
-    if (this.relationships != null) {
-      this.buildRelationships();
-    }
     this.afterConstruction();
   }
 
