@@ -1,5 +1,7 @@
 _ = window._
 
+console.log 'wassip'
+
 module.exports = ($http, Upload) ->
   class RestfulClient
     apiPrefix: "api/v1"
@@ -12,8 +14,9 @@ module.exports = ($http, Upload) ->
       @processing = []
       @resourcePlural = _.snakeCase(resourcePlural)
 
-    buildUrl: (url, params) ->
-      return url unless params?
+    buildUrl: (path, params) ->
+      path = "#{@apiPrefix}/#{@resourcePlural}/#{path}"
+      return path unless params?
 
       # note to self, untested function.. you'll probably hate yourself for rewriting this rn
       encodeParams = (params) ->
@@ -21,37 +24,51 @@ module.exports = ($http, Upload) ->
           encodeURIComponent(key) + "=" + encodeURIComponent(params[key])
         ).join('&')
 
-      url + "?" + encodeParams(params)
+      path + "?" + encodeParams(params)
 
     defaultParams: {}
 
-    collectionPath: ->
-      "#{@apiPrefix}/#{@resourcePlural}"
-
     memberPath: (id, action) ->
       if action?
-        "#{@apiPrefix}/#{@resourcePlural}/#{id}/#{action}"
+        "#{id}/#{action}"
       else
-        "#{@apiPrefix}/#{@resourcePlural}/#{id}"
-
-    customPath: (path) ->
-      "#{@apiPrefix}/#{@resourcePlural}/#{path}"
+        "#{id}"
 
     fetchById: (id) ->
       @getMember(id)
 
     fetch: ({params, path}) ->
-      if path?
-        @get(path, params)
-      else
-        @getCollection(params)
+      @get(path or '', params)
 
     get: (path, params) ->
-      url = @buildUrl(@customPath(path), _.merge(@defaultParams, params))
-      $http.get(url).then @onSuccess, @onFailure
+      $http.get(@buildUrl(path, _.merge(@defaultParams, params))).then @onSuccess, @onFailure
 
     post: (path, params) ->
-      $http.post(@customPath(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.post(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+
+    patch: (path, params) ->
+      $http.patch(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+
+    delete: (path, params) ->
+      $http.delete(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+
+    postMember: (keyOrId, action, params) ->
+      @post(@memberPath(keyOrId, action), params)
+
+    patchMember: (keyOrId, action, params) ->
+      @patch(@memberPath(keyOrId, action), params)
+
+    getMember: (keyOrId, action = '', params) ->
+      @get @memberPath(keyOrId, action), params
+
+    create: (params) ->
+      @post('', params)
+
+    update: (id, params) ->
+      @patch(id, params)
+
+    destroy: (id, params) ->
+      @delete(id, params)
 
     upload: (path, file, params = {}, onProgress) ->
       upload = Upload.upload(_.merge(params,
@@ -61,25 +78,3 @@ module.exports = ($http, Upload) ->
       ).progress(onProgress)
       upload.then(@onSuccess, @onFailure)
       upload
-
-    postMember: (keyOrId, action, params) ->
-      $http.post(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
-
-    patchMember: (keyOrId, action, params) ->
-      $http.patch(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
-
-    getMember: (keyOrId, action, params) ->
-      $http.get(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
-
-    getCollection: (params) ->
-      url = @buildUrl(@collectionPath(), _.merge(@defaultParams, params))
-      $http.get(url).then @onSuccess, @onFailure
-
-    create: (params) ->
-      $http.post(@collectionPath(), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
-
-    update: (id, params) ->
-      $http.patch(@memberPath(id), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
-
-    destroy: (id, params) ->
-      $http.delete(@memberPath(id), _.merge(@defaultParams, params)).then @onSuccess, @onFailure

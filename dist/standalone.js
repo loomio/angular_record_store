@@ -77,9 +77,11 @@ module.exports = BaseModel = (function() {
       value: recordsInterface.remote,
       enumerable: false
     });
-    this.buildRelationships();
     this.update(this.defaultValues());
     this.update(attributes);
+    if (this.relationships != null) {
+      this.buildRelationships();
+    }
     this.afterConstruction();
   }
 
@@ -553,6 +555,8 @@ var _;
 
 _ = window._;
 
+console.log('wassip');
+
 module.exports = function($http, Upload) {
   var RestfulClient;
   return RestfulClient = (function() {
@@ -571,35 +575,28 @@ module.exports = function($http, Upload) {
       this.resourcePlural = _.snakeCase(resourcePlural);
     }
 
-    RestfulClient.prototype.buildUrl = function(url, params) {
+    RestfulClient.prototype.buildUrl = function(path, params) {
       var encodeParams;
+      path = this.apiPrefix + "/" + this.resourcePlural + "/" + path;
       if (params == null) {
-        return url;
+        return path;
       }
       encodeParams = function(params) {
         return _.map(_.keys(params), function(key) {
           return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
         }).join('&');
       };
-      return url + "?" + encodeParams(params);
+      return path + "?" + encodeParams(params);
     };
 
     RestfulClient.prototype.defaultParams = {};
 
-    RestfulClient.prototype.collectionPath = function() {
-      return this.apiPrefix + "/" + this.resourcePlural;
-    };
-
     RestfulClient.prototype.memberPath = function(id, action) {
       if (action != null) {
-        return this.apiPrefix + "/" + this.resourcePlural + "/" + id + "/" + action;
+        return id + "/" + action;
       } else {
-        return this.apiPrefix + "/" + this.resourcePlural + "/" + id;
+        return "" + id;
       }
-    };
-
-    RestfulClient.prototype.customPath = function(path) {
-      return this.apiPrefix + "/" + this.resourcePlural + "/" + path;
     };
 
     RestfulClient.prototype.fetchById = function(id) {
@@ -609,21 +606,50 @@ module.exports = function($http, Upload) {
     RestfulClient.prototype.fetch = function(arg) {
       var params, path;
       params = arg.params, path = arg.path;
-      if (path != null) {
-        return this.get(path, params);
-      } else {
-        return this.getCollection(params);
-      }
+      return this.get(path || '', params);
     };
 
     RestfulClient.prototype.get = function(path, params) {
-      var url;
-      url = this.buildUrl(this.customPath(path), _.merge(this.defaultParams, params));
-      return $http.get(url).then(this.onSuccess, this.onFailure);
+      return $http.get(this.buildUrl(path, _.merge(this.defaultParams, params))).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.post = function(path, params) {
-      return $http.post(this.customPath(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http.post(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+    };
+
+    RestfulClient.prototype.patch = function(path, params) {
+      return $http.patch(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+    };
+
+    RestfulClient.prototype["delete"] = function(path, params) {
+      return $http["delete"](this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+    };
+
+    RestfulClient.prototype.postMember = function(keyOrId, action, params) {
+      return this.post(this.memberPath(keyOrId, action), params);
+    };
+
+    RestfulClient.prototype.patchMember = function(keyOrId, action, params) {
+      return this.patch(this.memberPath(keyOrId, action), params);
+    };
+
+    RestfulClient.prototype.getMember = function(keyOrId, action, params) {
+      if (action == null) {
+        action = '';
+      }
+      return this.get(this.memberPath(keyOrId, action), params);
+    };
+
+    RestfulClient.prototype.create = function(params) {
+      return this.post('', params);
+    };
+
+    RestfulClient.prototype.update = function(id, params) {
+      return this.patch(id, params);
+    };
+
+    RestfulClient.prototype.destroy = function(id, params) {
+      return this["delete"](id, params);
     };
 
     RestfulClient.prototype.upload = function(path, file, params, onProgress) {
@@ -640,36 +666,6 @@ module.exports = function($http, Upload) {
       })).progress(onProgress);
       upload.then(this.onSuccess, this.onFailure);
       return upload;
-    };
-
-    RestfulClient.prototype.postMember = function(keyOrId, action, params) {
-      return $http.post(this.memberPath(keyOrId, action), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.patchMember = function(keyOrId, action, params) {
-      return $http.patch(this.memberPath(keyOrId, action), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.getMember = function(keyOrId, action, params) {
-      return $http.get(this.memberPath(keyOrId, action), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.getCollection = function(params) {
-      var url;
-      url = this.buildUrl(this.collectionPath(), _.merge(this.defaultParams, params));
-      return $http.get(url).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.create = function(params) {
-      return $http.post(this.collectionPath(), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.update = function(id, params) {
-      return $http.patch(this.memberPath(id), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
-    };
-
-    RestfulClient.prototype.destroy = function(id, params) {
-      return $http["delete"](this.memberPath(id), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     return RestfulClient;
