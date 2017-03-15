@@ -555,11 +555,11 @@ var _;
 
 _ = window._;
 
-console.log('wassip');
-
 module.exports = function($http, Upload) {
   var RestfulClient;
   return RestfulClient = (function() {
+    RestfulClient.prototype.defaultParams = {};
+
     RestfulClient.prototype.apiPrefix = "api/v1";
 
     RestfulClient.prototype.onSuccess = function(response) {
@@ -577,7 +577,7 @@ module.exports = function($http, Upload) {
 
     RestfulClient.prototype.buildUrl = function(path, params) {
       var encodeParams;
-      path = this.apiPrefix + "/" + this.resourcePlural + "/" + path;
+      path = _.compact([this.apiPrefix, this.resourcePlural, path]).join('/');
       if (params == null) {
         return path;
       }
@@ -589,14 +589,8 @@ module.exports = function($http, Upload) {
       return path + "?" + encodeParams(params);
     };
 
-    RestfulClient.prototype.defaultParams = {};
-
     RestfulClient.prototype.memberPath = function(id, action) {
-      if (action != null) {
-        return id + "/" + action;
-      } else {
-        return "" + id;
-      }
+      return _.compact([id, action]).join('/');
     };
 
     RestfulClient.prototype.fetchById = function(id) {
