@@ -23,6 +23,8 @@ module.exports = ($http, Upload) ->
 
       url + "?" + encodeParams(params)
 
+    defaultParams: {}
+
     collectionPath: ->
       "#{@apiPrefix}/#{@resourcePlural}"
 
@@ -45,11 +47,11 @@ module.exports = ($http, Upload) ->
         @getCollection(params)
 
     get: (path, params) ->
-      url = @buildUrl(@customPath(path), params)
+      url = @buildUrl(@customPath(path), _.merge(@defaultParams, params))
       $http.get(url).then @onSuccess, @onFailure
 
     post: (path, params) ->
-      $http.post(@customPath(path), params).then @onSuccess, @onFailure
+      $http.post(@customPath(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
     upload: (path, file, params = {}, onProgress) ->
       upload = Upload.upload(_.merge(params,
@@ -61,23 +63,23 @@ module.exports = ($http, Upload) ->
       upload
 
     postMember: (keyOrId, action, params) ->
-      $http.post(@memberPath(keyOrId, action), params).then @onSuccess, @onFailure
+      $http.post(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
     patchMember: (keyOrId, action, params) ->
-      $http.patch(@memberPath(keyOrId, action), params).then @onSuccess, @onFailure
+      $http.patch(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
-    getMember: (keyOrId, action) ->
-      $http.get(@memberPath(keyOrId, action)).then @onSuccess, @onFailure
+    getMember: (keyOrId, action, params) ->
+      $http.get(@memberPath(keyOrId, action), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
     getCollection: (params) ->
-      url = @buildUrl(@collectionPath(), params)
+      url = @buildUrl(@collectionPath(), _.merge(@defaultParams, params))
       $http.get(url).then @onSuccess, @onFailure
 
     create: (params) ->
-      $http.post(@collectionPath(), params).then @onSuccess, @onFailure
+      $http.post(@collectionPath(), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
     update: (id, params) ->
-      $http.patch(@memberPath(id), params).then @onSuccess, @onFailure
+      $http.patch(@memberPath(id), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
 
-    destroy: (id) ->
-      $http.delete(@memberPath(id)).then @onSuccess, @onFailure
+    destroy: (id, params) ->
+      $http.delete(@memberPath(id), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
