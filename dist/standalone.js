@@ -645,19 +645,19 @@ module.exports = function($http, Upload) {
     };
 
     RestfulClient.prototype.get = function(path, params) {
-      return $http.get(this.buildUrl(path, _.merge(this.defaultParams, params))).then(this.onSuccess, this.onFailure);
+      return $http.get(this.buildUrl(path, _.merge({}, this.defaultParams, params))).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.post = function(path, params) {
-      return $http.post(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http.post(this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.patch = function(path, params) {
-      return $http.patch(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http.patch(this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype["delete"] = function(path, params) {
-      return $http["delete"](this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http["delete"](this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.postMember = function(keyOrId, action, params) {
