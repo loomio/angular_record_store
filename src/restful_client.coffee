@@ -35,16 +35,16 @@ module.exports = ($http, Upload) ->
       @get(path or '', params)
 
     get: (path, params) ->
-      $http.get(@buildUrl(path, _.merge(@defaultParams, params))).then @onSuccess, @onFailure
+      $http.get(@buildUrl(path, _.merge({}, @defaultParams, params))).then @onSuccess, @onFailure
 
     post: (path, params) ->
-      $http.post(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.post(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     patch: (path, params) ->
-      $http.patch(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.patch(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     delete: (path, params) ->
-      $http.delete(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.delete(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     postMember: (keyOrId, action, params) ->
       @post(@memberPath(keyOrId, action), params)
