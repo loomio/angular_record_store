@@ -66,7 +66,7 @@ module.exports = ($http, Upload) ->
 
     upload: (path, file, params = {}, onProgress) ->
       upload = Upload.upload(_.merge(params,
-        url: @customPath(path)
+        url: @buildUrl(path)
         headers: { 'Content-Type': false }
         file: file)
       ).progress(onProgress)

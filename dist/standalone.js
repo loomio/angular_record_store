@@ -693,7 +693,7 @@ module.exports = function($http, Upload) {
         params = {};
       }
       upload = Upload.upload(_.merge(params, {
-        url: this.customPath(path),
+        url: this.buildUrl(path),
         headers: {
           'Content-Type': false
         },
