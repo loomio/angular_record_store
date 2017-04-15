@@ -40,7 +40,6 @@ module.exports = (RestfulClient, $q) ->
 
     importJSON: (json) ->
       @import(utils.parseJSON(json))
-      @afterImport(json)
 
     import: (attributes) ->
       record = @find(attributes.key or attributes.id)
@@ -48,9 +47,10 @@ module.exports = (RestfulClient, $q) ->
         record.update(attributes)
       else
         record = @create(attributes)
+      @afterImport(record)
       record
 
-    afterImport: (json) ->
+    afterImport: (record) ->
 
     findOrFetchById: (id) ->
       deferred = $q.defer()
