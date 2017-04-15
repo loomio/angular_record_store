@@ -400,7 +400,8 @@ module.exports = function(RestfulClient, $q) {
     };
 
     BaseRecordsInterface.prototype.importJSON = function(json) {
-      return this["import"](utils.parseJSON(json));
+      this["import"](utils.parseJSON(json));
+      return this.afterImport(json);
     };
 
     BaseRecordsInterface.prototype["import"] = function(attributes) {
@@ -413,6 +414,8 @@ module.exports = function(RestfulClient, $q) {
       }
       return record;
     };
+
+    BaseRecordsInterface.prototype.afterImport = function(json) {};
 
     BaseRecordsInterface.prototype.findOrFetchById = function(id) {
       var deferred, promise, record;
