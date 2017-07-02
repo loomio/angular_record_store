@@ -52,9 +52,9 @@ module.exports = (RestfulClient, $q) ->
 
     afterImport: (record) ->
 
-    findOrFetchById: (id) ->
+    findOrFetchById: (id, params = {}) ->
       deferred = $q.defer()
-      promise = @remote.fetchById(id).then => @find(id)
+      promise = @remote.fetchById(id, params).then => @find(id)
 
       if record = @find(id)
         deferred.resolve(record)
