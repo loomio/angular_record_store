@@ -435,10 +435,13 @@ module.exports = function(RestfulClient, $q) {
 
     BaseRecordsInterface.prototype.afterImport = function(record) {};
 
-    BaseRecordsInterface.prototype.findOrFetchById = function(id) {
+    BaseRecordsInterface.prototype.findOrFetchById = function(id, params) {
       var deferred, promise, record;
+      if (params == null) {
+        params = {};
+      }
       deferred = $q.defer();
-      promise = this.remote.fetchById(id).then((function(_this) {
+      promise = this.remote.fetchById(id, params).then((function(_this) {
         return function() {
           return _this.find(id);
         };
@@ -637,8 +640,11 @@ module.exports = function($http, Upload) {
       return _.compact([id, action]).join('/');
     };
 
-    RestfulClient.prototype.fetchById = function(id) {
-      return this.getMember(id);
+    RestfulClient.prototype.fetchById = function(id, params) {
+      if (params == null) {
+        params = {};
+      }
+      return this.getMember(id, '', params);
     };
 
     RestfulClient.prototype.fetch = function(arg) {

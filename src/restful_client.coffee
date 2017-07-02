@@ -28,8 +28,8 @@ module.exports = ($http, Upload) ->
     memberPath: (id, action) ->
       _.compact([id, action]).join('/')
 
-    fetchById: (id) ->
-      @getMember(id)
+    fetchById: (id, params = {}) ->
+      @getMember(id, '', params)
 
     fetch: ({params, path}) ->
       @get(path or '', params)
