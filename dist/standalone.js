@@ -191,6 +191,9 @@ module.exports = BaseModel = (function() {
 
   BaseModel.prototype.hasMany = function(name, userArgs) {
     var args, obj, viewName;
+    if (userArgs == null) {
+      userArgs = {};
+    }
     args = _.defaults(userArgs, {
       from: name,
       "with": this.constructor.singular + 'Id',
