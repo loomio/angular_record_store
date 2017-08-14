@@ -208,49 +208,41 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.hasMany = function(name, userArgs) {
-    var addDynamicView, addFindMethod, args, defaults;
-    defaults = {
+    var args, obj, viewName;
+    args = _.defaults(userArgs, {
       from: name,
       "with": this.constructor.singular + 'Id',
       of: 'id',
       dynamicView: true
-    };
-    args = _.assign(defaults, userArgs);
-    addDynamicView = (function(_this) {
-      return function() {
-        var obj, viewName;
-        viewName = _this.constructor.plural + "." + name + "." + (Math.random());
-        _this.views[viewName] = _this.recordStore[args.from].collection.addDynamicView(name);
-        _this.views[viewName].applyFind((
-          obj = {},
-          obj["" + args["with"]] = _this[args.of],
-          obj
-        ));
-        if (args.sortBy) {
-          _this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
-        }
-        _this.views[viewName];
-        return _this[name] = function() {
+    });
+    if (args.dynamicView) {
+      viewName = this.constructor.plural + "." + name;
+      this.views[viewName] = this.recordStore[args.from].collection.addDynamicView(viewName);
+      this.views[viewName].applyFind((
+        obj = {},
+        obj["" + args["with"]] = this[args.of],
+        obj
+      ));
+      if (args.sortBy) {
+        this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
+      }
+      this.views[viewName];
+      return this[name] = (function(_this) {
+        return function() {
           return _this.views[viewName].data();
         };
-      };
-    })(this);
-    addFindMethod = (function(_this) {
-      return function() {
-        return _this[name] = function() {
-          var obj;
+      })(this);
+    } else {
+      return this[name] = (function(_this) {
+        return function() {
+          var obj1;
           return _this.recordStore[args.from].find((
-            obj = {},
-            obj["" + args["with"]] = _this[args.of],
-            obj
+            obj1 = {},
+            obj1["" + args["with"]] = _this[args.of],
+            obj1
           ));
         };
-      };
-    })(this);
-    if (args.dynamicView) {
-      return addDynamicView();
-    } else {
-      return addFindMethod();
+      })(this);
     }
   };
 
