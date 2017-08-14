@@ -151,20 +151,18 @@ module.exports =
       @relationships()
 
     hasMany: (name, userArgs) ->
-      defaults =
+      args = _.defaults userArgs,
         from: name
         with:  @constructor.singular+'Id'
         of: 'id'
         dynamicView: true
 
-      args = _.assign defaults, userArgs
-
-      # sets up a dynamic view which will be kept updated as matching elements are added to the collection
-      addDynamicView = =>
-        viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
+      if args.dynamicView
+        # sets up a dynamic view which will be kept updated as matching elements are added to the collection
+        viewName = "#{@constructor.plural}.#{name}"
 
         # create the view which references the records
-        @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
+        @views[viewName] = @recordStore[args.from].collection.addDynamicView(viewName)
         @views[viewName].applyFind("#{args.with}": @[args.of])
         @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
         @views[viewName]
@@ -172,16 +170,10 @@ module.exports =
         # create fn to retrieve records from the view
         @[name] = =>
           @views[viewName].data()
-
-      # adds a simple Records.collection.where with no db overhead
-      addFindMethod = =>
+      else
+        # adds a simple Records.collection.where with no db overhead
         @[name] = =>
           @recordStore[args.from].find("#{args.with}": @[args.of])
-
-      if args.dynamicView
-        addDynamicView()
-      else
-        addFindMethod()
 
     belongsTo: (name, userArgs) ->
       defaults =
