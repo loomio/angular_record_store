@@ -190,7 +190,7 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.hasMany = function(name, userArgs) {
-    var args, obj, viewName;
+    var args;
     if (userArgs == null) {
       userArgs = {};
     }
@@ -200,8 +200,28 @@ module.exports = BaseModel = (function() {
       of: 'id',
       dynamicView: true
     });
-    if (args.dynamicView) {
-      viewName = this.constructor.plural + "." + name;
+    return this[name] = args.dynamicView ? (function(_this) {
+      return function() {
+        return _this.buildView(_this.constructor.plural + "." + name, args).data();
+      };
+    })(this) : (function(_this) {
+      return function() {
+        var obj;
+        return _this.recordStore[args.from].find((
+          obj = {},
+          obj["" + args["with"]] = _this[args.of],
+          obj
+        ));
+      };
+    })(this);
+  };
+
+  BaseModel.prototype.buildView = function(viewName, args) {
+    var obj;
+    if (args == null) {
+      args = {};
+    }
+    if (!this.views[viewName]) {
       this.views[viewName] = this.recordStore[args.from].collection.addDynamicView(viewName);
       this.views[viewName].applyFind((
         obj = {},
@@ -211,24 +231,8 @@ module.exports = BaseModel = (function() {
       if (args.sortBy) {
         this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
       }
-      this.views[viewName];
-      return this[name] = (function(_this) {
-        return function() {
-          return _this.views[viewName].data();
-        };
-      })(this);
-    } else {
-      return this[name] = (function(_this) {
-        return function() {
-          var obj1;
-          return _this.recordStore[args.from].find((
-            obj1 = {},
-            obj1["" + args["with"]] = _this[args.of],
-            obj1
-          ));
-        };
-      })(this);
     }
+    return this.views[viewName];
   };
 
   BaseModel.prototype.belongsTo = function(name, userArgs) {
