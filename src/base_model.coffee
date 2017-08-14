@@ -168,23 +168,20 @@ module.exports =
         of: 'id'
         dynamicView: true
 
-      if args.dynamicView
+      @[name] = if args.dynamicView
         # sets up a dynamic view which will be kept updated as matching elements are added to the collection
-        viewName = "#{@constructor.plural}.#{name}"
+        => @buildView("#{@constructor.plural}.#{name}", args).data()
+      else
+        # adds a simple Records.collection.where with no db overhead
+        => @recordStore[args.from].find("#{args.with}": @[args.of])
 
-        # create the view which references the records
+    buildView: (viewName, args = {}) ->
+      # create the view which references the records
+      if !@views[viewName]
         @views[viewName] = @recordStore[args.from].collection.addDynamicView(viewName)
         @views[viewName].applyFind("#{args.with}": @[args.of])
         @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
-        @views[viewName]
-
-        # create fn to retrieve records from the view
-        @[name] = =>
-          @views[viewName].data()
-      else
-        # adds a simple Records.collection.where with no db overhead
-        @[name] = =>
-          @recordStore[args.from].find("#{args.with}": @[args.of])
+      @views[viewName]
 
     belongsTo: (name, userArgs) ->
       defaults =
