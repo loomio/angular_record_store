@@ -161,7 +161,7 @@ module.exports =
       @views = {}
       @relationships()
 
-    hasMany: (name, userArgs) ->
+    hasMany: (name, userArgs = {}) ->
       args = _.defaults userArgs,
         from: name
         with:  @constructor.singular+'Id'
