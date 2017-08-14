@@ -171,7 +171,7 @@ module.exports =
 
       @[name] = if args.dynamicView
         # sets up a dynamic view which will be kept updated as matching elements are added to the collection
-        => @buildView("#{@constructor.plural}.#{name}", args).data()
+        => @buildView("#{@constructor.singular}_#{@keyOrId()}_#{name}", args).data()
       else
         # adds a simple Records.collection.where with no db overhead
         => @recordStore[args.from].find("#{args.with}": @[args.of])
