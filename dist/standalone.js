@@ -220,7 +220,7 @@ module.exports = BaseModel = (function() {
     });
     return this[name] = args.dynamicView ? (function(_this) {
       return function() {
-        return _this.buildView(_this.constructor.plural + "." + name, args).data();
+        return _this.buildView(_this.constructor.singular + "_" + (_this.keyOrId()) + "_" + name, args).data();
       };
     })(this) : (function(_this) {
       return function() {
