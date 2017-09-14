@@ -208,50 +208,49 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.hasMany = function(name, userArgs) {
-    var addDynamicView, addFindMethod, args, defaults;
-    defaults = {
+    var args;
+    if (userArgs == null) {
+      userArgs = {};
+    }
+    args = _.defaults(userArgs, {
       from: name,
       "with": this.constructor.singular + 'Id',
       of: 'id',
       dynamicView: true
-    };
-    args = _.assign(defaults, userArgs);
-    addDynamicView = (function(_this) {
+    });
+    return this[name] = args.dynamicView ? (function(_this) {
       return function() {
-        var obj, viewName;
-        viewName = _this.constructor.plural + "." + name + "." + (Math.random());
-        _this.views[viewName] = _this.recordStore[args.from].collection.addDynamicView(name);
-        _this.views[viewName].applyFind((
+        return _this.buildView(_this.constructor.plural + "." + name, args).data();
+      };
+    })(this) : (function(_this) {
+      return function() {
+        var obj;
+        return _this.recordStore[args.from].find((
           obj = {},
           obj["" + args["with"]] = _this[args.of],
           obj
         ));
-        if (args.sortBy) {
-          _this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
-        }
-        _this.views[viewName];
-        return _this[name] = function() {
-          return _this.views[viewName].data();
-        };
       };
     })(this);
-    addFindMethod = (function(_this) {
-      return function() {
-        return _this[name] = function() {
-          var obj;
-          return _this.recordStore[args.from].find((
-            obj = {},
-            obj["" + args["with"]] = _this[args.of],
-            obj
-          ));
-        };
-      };
-    })(this);
-    if (args.dynamicView) {
-      return addDynamicView();
-    } else {
-      return addFindMethod();
+  };
+
+  BaseModel.prototype.buildView = function(viewName, args) {
+    var obj;
+    if (args == null) {
+      args = {};
     }
+    if (!this.views[viewName]) {
+      this.views[viewName] = this.recordStore[args.from].collection.addDynamicView(viewName);
+      this.views[viewName].applyFind((
+        obj = {},
+        obj["" + args["with"]] = this[args.of],
+        obj
+      ));
+      if (args.sortBy) {
+        this.views[viewName].applySimpleSort(args.sortBy, args.sortDesc);
+      }
+    }
+    return this.views[viewName];
   };
 
   BaseModel.prototype.belongsTo = function(name, userArgs) {
@@ -429,13 +428,19 @@ module.exports = function(RestfulClient, $q) {
       } else {
         record = this.create(attributes);
       }
+      this.afterImport(record);
       return record;
     };
 
-    BaseRecordsInterface.prototype.findOrFetchById = function(id) {
+    BaseRecordsInterface.prototype.afterImport = function(record) {};
+
+    BaseRecordsInterface.prototype.findOrFetchById = function(id, params) {
       var deferred, promise, record;
+      if (params == null) {
+        params = {};
+      }
       deferred = $q.defer();
-      promise = this.remote.fetchById(id).then((function(_this) {
+      promise = this.remote.fetchById(id, params).then((function(_this) {
         return function() {
           return _this.find(id);
         };
@@ -634,8 +639,11 @@ module.exports = function($http, Upload) {
       return _.compact([id, action]).join('/');
     };
 
-    RestfulClient.prototype.fetchById = function(id) {
-      return this.getMember(id);
+    RestfulClient.prototype.fetchById = function(id, params) {
+      if (params == null) {
+        params = {};
+      }
+      return this.getMember(id, '', params);
     };
 
     RestfulClient.prototype.fetch = function(arg) {
@@ -645,19 +653,19 @@ module.exports = function($http, Upload) {
     };
 
     RestfulClient.prototype.get = function(path, params) {
-      return $http.get(this.buildUrl(path, _.merge(this.defaultParams, params))).then(this.onSuccess, this.onFailure);
+      return $http.get(this.buildUrl(path, _.merge({}, this.defaultParams, params))).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.post = function(path, params) {
-      return $http.post(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http.post(this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.patch = function(path, params) {
-      return $http.patch(this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http.patch(this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype["delete"] = function(path, params) {
-      return $http["delete"](this.buildUrl(path), _.merge(this.defaultParams, params)).then(this.onSuccess, this.onFailure);
+      return $http["delete"](this.buildUrl(path), _.merge({}, this.defaultParams, params)).then(this.onSuccess, this.onFailure);
     };
 
     RestfulClient.prototype.postMember = function(keyOrId, action, params) {
@@ -693,7 +701,7 @@ module.exports = function($http, Upload) {
         params = {};
       }
       upload = Upload.upload(_.merge(params, {
-        url: this.customPath(path),
+        url: this.buildUrl(path),
         headers: {
           'Content-Type': false
         },

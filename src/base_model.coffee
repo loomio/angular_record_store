@@ -161,38 +161,27 @@ module.exports =
       @views = {}
       @relationships()
 
-    hasMany: (name, userArgs) ->
-      defaults =
+    hasMany: (name, userArgs = {}) ->
+      args = _.defaults userArgs,
         from: name
         with:  @constructor.singular+'Id'
         of: 'id'
         dynamicView: true
 
-      args = _.assign defaults, userArgs
+      @[name] = if args.dynamicView
+        # sets up a dynamic view which will be kept updated as matching elements are added to the collection
+        => @buildView("#{@constructor.plural}.#{name}", args).data()
+      else
+        # adds a simple Records.collection.where with no db overhead
+        => @recordStore[args.from].find("#{args.with}": @[args.of])
 
-      # sets up a dynamic view which will be kept updated as matching elements are added to the collection
-      addDynamicView = =>
-        viewName = "#{@constructor.plural}.#{name}.#{Math.random()}"
-
-        # create the view which references the records
-        @views[viewName] = @recordStore[args.from].collection.addDynamicView(name)
+    buildView: (viewName, args = {}) ->
+      # create the view which references the records
+      if !@views[viewName]
+        @views[viewName] = @recordStore[args.from].collection.addDynamicView(viewName)
         @views[viewName].applyFind("#{args.with}": @[args.of])
         @views[viewName].applySimpleSort(args.sortBy, args.sortDesc) if args.sortBy
-        @views[viewName]
-
-        # create fn to retrieve records from the view
-        @[name] = =>
-          @views[viewName].data()
-
-      # adds a simple Records.collection.where with no db overhead
-      addFindMethod = =>
-        @[name] = =>
-          @recordStore[args.from].find("#{args.with}": @[args.of])
-
-      if args.dynamicView
-        addDynamicView()
-      else
-        addFindMethod()
+      @views[viewName]
 
     belongsTo: (name, userArgs) ->
       defaults =

@@ -28,23 +28,23 @@ module.exports = ($http, Upload) ->
     memberPath: (id, action) ->
       _.compact([id, action]).join('/')
 
-    fetchById: (id) ->
-      @getMember(id)
+    fetchById: (id, params = {}) ->
+      @getMember(id, '', params)
 
     fetch: ({params, path}) ->
       @get(path or '', params)
 
     get: (path, params) ->
-      $http.get(@buildUrl(path, _.merge(@defaultParams, params))).then @onSuccess, @onFailure
+      $http.get(@buildUrl(path, _.merge({}, @defaultParams, params))).then @onSuccess, @onFailure
 
     post: (path, params) ->
-      $http.post(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.post(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     patch: (path, params) ->
-      $http.patch(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.patch(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     delete: (path, params) ->
-      $http.delete(@buildUrl(path), _.merge(@defaultParams, params)).then @onSuccess, @onFailure
+      $http.delete(@buildUrl(path), _.merge({}, @defaultParams, params)).then @onSuccess, @onFailure
 
     postMember: (keyOrId, action, params) ->
       @post(@memberPath(keyOrId, action), params)
@@ -66,7 +66,7 @@ module.exports = ($http, Upload) ->
 
     upload: (path, file, params = {}, onProgress) ->
       upload = Upload.upload(_.merge(params,
-        url: @customPath(path)
+        url: @buildUrl(path)
         headers: { 'Content-Type': false }
         file: file)
       ).progress(onProgress)
