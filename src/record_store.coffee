@@ -26,14 +26,12 @@ module.exports =
       @_version = (@_version || 0) + 1
 
     memoize: (func, obj) ->
-      lastKey = ""
-      result = null
+      cache = {}
       obj = obj || @
       ->
         args = Array.prototype.slice.call(arguments)
         key = "#{obj._version}#{args.join()}"
-        if lastKey == key
-          result
+        if cache[key]?
+          cache[key]
         else
-          lastKey = key
-          result = func.apply(this, arguments)
+          cache[key] = func.apply(this, arguments)

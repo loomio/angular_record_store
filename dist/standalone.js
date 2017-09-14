@@ -574,19 +574,17 @@ module.exports = RecordStore = (function() {
   };
 
   RecordStore.prototype.memoize = function(func, obj) {
-    var lastKey, result;
-    lastKey = "";
-    result = null;
+    var cache;
+    cache = {};
     obj = obj || this;
     return function() {
       var args, key;
       args = Array.prototype.slice.call(arguments);
       key = "" + obj._version + (args.join());
-      if (lastKey === key) {
-        return result;
+      if (cache[key] != null) {
+        return cache[key];
       } else {
-        lastKey = key;
-        return result = func.apply(this, arguments);
+        return cache[key] = func.apply(this, arguments);
       }
     };
   };
