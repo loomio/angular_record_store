@@ -1,5 +1,6 @@
 module.exports =
   new class Utils
+
     transformKeys: (attributes, transformFn) ->
       result = {}
       _.each _.keys(attributes), (key) ->

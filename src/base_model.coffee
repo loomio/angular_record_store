@@ -25,6 +25,7 @@ module.exports =
 
     # override this if your apiEndPoint is not the model.plural
     @apiEndPoint: null
+    @memoize: []
 
     # provides a method which returns a hash with previous and next values.
     # this function takes a hash of options, of which first, last, and pageSize are required.
@@ -72,11 +73,20 @@ module.exports =
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
       Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
       Object.defineProperty(@, 'remote', value: recordsInterface.remote, enumerable: false)
-
       @update(@defaultValues())
       @update(attributes)
       @buildRelationships() if @relationships?
+      @applyMemoization()
       @afterConstruction()
+
+    applyMemoization: ->
+      _.each @constructor.memoize, (name) =>
+        func = @[name]
+        @[name] = @recordStore.memoize func, @
+
+    bumpVersion: ->
+      # @recordStore.bumpVersion()
+      @_version = (@_version || 0) + 1
 
     afterConstruction: ->
 
@@ -98,6 +108,7 @@ module.exports =
       @['$loki']# and @recordsInterface.collection.get(@['$loki'])
 
     update: (attributes) ->
+      @bumpVersion()
       @baseUpdate(attributes)
 
     baseUpdate: (attributes) ->

@@ -25,6 +25,8 @@ module.exports = BaseModel = (function() {
 
   BaseModel.apiEndPoint = null;
 
+  BaseModel.memoize = [];
+
   BaseModel.paginate = function(opts) {
     if (opts == null) {
       opts = {};
@@ -82,8 +84,23 @@ module.exports = BaseModel = (function() {
     if (this.relationships != null) {
       this.buildRelationships();
     }
+    this.applyMemoization();
     this.afterConstruction();
   }
+
+  BaseModel.prototype.applyMemoization = function() {
+    return _.each(this.constructor.memoize, (function(_this) {
+      return function(name) {
+        var func;
+        func = _this[name];
+        return _this[name] = _this.recordStore.memoize(func, _this);
+      };
+    })(this));
+  };
+
+  BaseModel.prototype.bumpVersion = function() {
+    return this._version = (this._version || 0) + 1;
+  };
 
   BaseModel.prototype.afterConstruction = function() {};
 
@@ -113,6 +130,7 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.update = function(attributes) {
+    this.bumpVersion();
     return this.baseUpdate(attributes);
   };
 
@@ -530,6 +548,7 @@ module.exports = RecordStore = (function() {
   };
 
   RecordStore.prototype["import"] = function(data) {
+    this.bumpVersion();
     _.each(this.collectionNames, (function(_this) {
       return function(name) {
         var camelName, snakeName;
@@ -543,6 +562,28 @@ module.exports = RecordStore = (function() {
       };
     })(this));
     return data;
+  };
+
+  RecordStore.prototype.bumpVersion = function() {
+    return this._version = (this._version || 0) + 1;
+  };
+
+  RecordStore.prototype.memoize = function(func, obj) {
+    var lastKey, result;
+    lastKey = "";
+    result = null;
+    obj = obj || this;
+    return function() {
+      var args, key;
+      args = Array.prototype.slice.call(arguments);
+      key = "" + obj._version + (args.join());
+      if (lastKey === key) {
+        return result;
+      } else {
+        lastKey = key;
+        return result = func.apply(this, arguments);
+      }
+    };
   };
 
   return RecordStore;

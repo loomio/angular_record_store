@@ -13,6 +13,7 @@ module.exports =
       @collectionNames.push name
 
     import: (data) ->
+      @bumpVersion()
       _.each @collectionNames, (name) =>
         snakeName = _.snakeCase(name)
         camelName = _.camelCase(name)
@@ -20,3 +21,19 @@ module.exports =
           _.each data[snakeName], (recordData) =>
             @[camelName].importJSON(recordData)
       data
+
+    bumpVersion: ->
+      @_version = (@_version || 0) + 1
+
+    memoize: (func, obj) ->
+      lastKey = ""
+      result = null
+      obj = obj || @
+      ->
+        args = Array.prototype.slice.call(arguments)
+        key = "#{obj._version}#{args.join()}"
+        if lastKey == key
+          result
+        else
+          lastKey = key
+          result = func.apply(this, arguments)

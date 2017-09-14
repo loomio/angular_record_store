@@ -1,3 +1,5 @@
+utils = require('../src/utils.coffee')
+
 module.exports = (BaseModel) ->             # export a fn injecting BaseModel
   class DogModel extends BaseModel          # and returning your model class
     @singular: 'dog'                        # term for single *required*
@@ -5,6 +7,7 @@ module.exports = (BaseModel) ->             # export a fn injecting BaseModel
     @indices: ['ownerId']                   # any attributes often used for lookup
     @uniqueIndices: ['id', 'key']
     @serializableAttributes: ['id', 'name', 'ownerId']
+    @memoize: ['speak']
 
     defaultValues: ->                       # fn returning a object with default values for new records
       name: null                            # i think this is a good way to define both attributeNames and default values
@@ -24,6 +27,8 @@ module.exports = (BaseModel) ->             # export a fn injecting BaseModel
       @owner.name()                            # add any functions you wish
 
     scratchSelf: ->
-      _.each _.sample(@fleas(), 5), (flea) -> # lodash is available for you
+      _.each _.sample(@fleas(), 5), (flea) ->  # lodash is available for you
         flea.awaken()
 
+    speak: (word) ->
+      "#{@name} says #{word}"

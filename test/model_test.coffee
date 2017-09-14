@@ -203,3 +203,39 @@ describe 'recordsInterface', ->
       records = recordStore.doggies.find({'id': {'$gt': 5}, 'smellsBad': false})
       expect(records).toContain(goodDog1, goodDog2)
       expect(records.length).toBe(2)
+
+  describe 'cached', ->
+    it 'caches the result of the function call', ->
+      dog = recordStore.doggies.create(id: 1, key: 'a', name: 'fido')
+      expect(dog.speak('yo')).toEqual('fido says yo')
+      dog.name = 'choppy'
+      expect(dog.speak('yo')).toEqual('fido says yo')
+
+    it 'recomputes on new args', ->
+      dog = recordStore.doggies.create(id: 1, key: 'a', name: 'fido')
+      expect(dog.speak('yo')).toEqual('fido says yo')
+      expect(dog.speak('go')).toEqual('fido says go')
+
+    it 'invalidates cache on update', ->
+      dog = recordStore.doggies.create(id: 1, key: 'a', name: 'fido')
+      expect(dog.speak('yo')).toEqual('fido says yo')
+      dog.update(name: 'choppy')
+      expect(dog.speak('yo')).toEqual('choppy says yo')
+
+  describe 'recordStore.memoize', ->
+    it 'returns the current result', ->
+      val = 0
+      func = recordStore.memoize ->
+        val += 1
+        "hello#{val}"
+      expect(func()).toEqual('hello1')
+      expect(func()).toEqual('hello1')
+
+    it 'reruns fun if _version changes', ->
+      val = 0
+      func = recordStore.memoize ->
+        val += 1
+        "hello#{val}"
+      expect(func()).toEqual('hello1')
+      recordStore._version = 44
+      expect(func()).toEqual('hello2')
