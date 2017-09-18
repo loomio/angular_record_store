@@ -27,7 +27,7 @@ module.exports =
 
     memoize: (func, obj) ->
       cache = {}
-      # obj = obj || @
+      obj = obj || @
       ->
         args = Array.prototype.slice.call(arguments)
         key = "#{obj._version}#{args.join()}"
