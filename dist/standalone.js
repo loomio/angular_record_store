@@ -58,12 +58,25 @@ module.exports = BaseModel = (function() {
     if (attributes == null) {
       attributes = {};
     }
+    this.isValid = bind(this.isValid, this);
+    this.setErrors = bind(this.setErrors, this);
+    this.clearErrors = bind(this.clearErrors, this);
     this.save = bind(this.save, this);
     this.beforeRemove = bind(this.beforeRemove, this);
     this.beforeDestroy = bind(this.beforeDestroy, this);
     this.destroy = bind(this.destroy, this);
     this.remove = bind(this.remove, this);
+    this.keyOrId = bind(this.keyOrId, this);
+    this.isNew = bind(this.isNew, this);
+    this.baseSerialize = bind(this.baseSerialize, this);
+    this.serialize = bind(this.serialize, this);
+    this.isModified = bind(this.isModified, this);
+    this.modifiedAttributes = bind(this.modifiedAttributes, this);
+    this.attributeIsModified = bind(this.attributeIsModified, this);
+    this.baseUpdate = bind(this.baseUpdate, this);
+    this.update = bind(this.update, this);
     this.inCollection = bind(this.inCollection, this);
+    this.bumpVersion = bind(this.bumpVersion, this);
     this.processing = false;
     this._version = 0;
     this.attributeNames = [];
@@ -585,7 +598,7 @@ module.exports = RecordStore = (function() {
       if (cache[key] != null) {
         return cache[key];
       } else {
-        return cache[key] = func.apply(this, arguments);
+        return cache[key] = func.apply(obj, arguments);
       }
     };
   };
