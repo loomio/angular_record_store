@@ -218,8 +218,10 @@ describe 'recordsInterface', ->
 
     it 'invalidates cache on update', ->
       dog = recordStore.doggies.create(id: 1, key: 'a', name: 'fido')
+      expect(dog._version).toEqual(2)
       expect(dog.speak('yo')).toEqual('fido says yo')
       dog.update(name: 'choppy')
+      expect(dog._version).toEqual(3)
       expect(dog.speak('yo')).toEqual('choppy says yo')
 
   describe 'recordStore.memoize', ->

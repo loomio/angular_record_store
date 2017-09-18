@@ -65,6 +65,7 @@ module.exports = BaseModel = (function() {
     this.remove = bind(this.remove, this);
     this.inCollection = bind(this.inCollection, this);
     this.processing = false;
+    this._version = 0;
     this.attributeNames = [];
     this.setErrors();
     Object.defineProperty(this, 'recordsInterface', {

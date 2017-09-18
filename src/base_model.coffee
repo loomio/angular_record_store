@@ -68,6 +68,7 @@ module.exports =
 
     constructor: (recordsInterface, attributes = {}) ->
       @processing = false # not returning/throwing on already processing rn
+      @_version = 0
       @attributeNames = []
       @setErrors()
       Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
