@@ -131,11 +131,11 @@ module.exports = BaseModel = (function() {
   };
 
   BaseModel.prototype.update = function(attributes) {
-    this.bumpVersion();
     return this.baseUpdate(attributes);
   };
 
   BaseModel.prototype.baseUpdate = function(attributes) {
+    this.bumpVersion();
     this.attributeNames = _.union(this.attributeNames, _.keys(attributes));
     _.assign(this, attributes);
     if (this.inCollection()) {

@@ -109,10 +109,10 @@ module.exports =
       @['$loki']# and @recordsInterface.collection.get(@['$loki'])
 
     update: (attributes) ->
-      @bumpVersion()
       @baseUpdate(attributes)
 
     baseUpdate: (attributes) ->
+      @bumpVersion()
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
 
