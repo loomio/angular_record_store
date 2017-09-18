@@ -85,9 +85,9 @@ module.exports =
         func = @[name]
         @[name] = @recordStore.memoize func, @
 
-    bumpVersion: =>
+    bumpVersion: ->
       # @recordStore.bumpVersion()
-      @_version = (@_version || 0) + 1
+      @_version = @_version + 1
 
     afterConstruction: ->
 
@@ -108,17 +108,17 @@ module.exports =
     inCollection: =>
       @['$loki']# and @recordsInterface.collection.get(@['$loki'])
 
-    update: (attributes) =>
+    update: (attributes) ->
       @bumpVersion()
       @baseUpdate(attributes)
 
-    baseUpdate: (attributes) =>
+    baseUpdate: (attributes) ->
       @attributeNames = _.union(@attributeNames, _.keys(attributes))
       _.assign(@, attributes)
 
       @recordsInterface.collection.update(@) if @inCollection()
 
-    attributeIsModified: (attributeName) =>
+    attributeIsModified: (attributeName) ->
       return false unless @clonedFrom?
       original = @clonedFrom[attributeName]
       current = @[attributeName]
@@ -127,19 +127,19 @@ module.exports =
       else
         original != current
 
-    modifiedAttributes: =>
+    modifiedAttributes: ->
       return [] unless @clonedFrom?
       _.filter @attributeNames, (name) =>
         @attributeIsModified(name)
 
-    isModified: =>
+    isModified: ->
       return false unless @clonedFrom?
       @modifiedAttributes().length > 0
 
-    serialize: =>
+    serialize: ->
       @baseSerialize()
 
-    baseSerialize: =>
+    baseSerialize: ->
       wrapper = {}
       data = {}
       paramKey = _.snakeCase(@constructor.serializationRoot or @constructor.singular)
@@ -196,10 +196,10 @@ module.exports =
 
     translationOptions: ->
 
-    isNew: =>
+    isNew: ->
       not @id?
 
-    keyOrId: =>
+    keyOrId: ->
       if @key?
         @key
       else
@@ -239,13 +239,13 @@ module.exports =
       else
         @remote.update(@keyOrId(), @serialize()).then(saveSuccess, saveFailure)
 
-    clearErrors: =>
+    clearErrors: ->
       @errors = {}
 
-    setErrors: (errorList = []) =>
+    setErrors: (errorList = []) ->
       @errors = {}
       _.each errorList, (errors, key) =>
         @errors[_.camelCase(key)] = errors
 
-    isValid: =>
+    isValid: ->
       @errors.length > 0
