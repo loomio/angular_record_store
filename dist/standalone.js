@@ -585,7 +585,7 @@ module.exports = RecordStore = (function() {
       if (cache[key] != null) {
         return cache[key];
       } else {
-        return cache[key] = func.apply(obj, arguments);
+        return cache[key] = func.apply(this, arguments);
       }
     };
   };

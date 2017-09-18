@@ -34,4 +34,4 @@ module.exports =
         if cache[key]?
           cache[key]
         else
-          cache[key] = func.apply(obj, arguments)
+          cache[key] = func.apply(this, arguments)
