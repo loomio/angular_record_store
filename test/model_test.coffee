@@ -224,20 +224,23 @@ describe 'recordsInterface', ->
       expect(dog._version).toEqual(3)
       expect(dog.speak('yo')).toEqual('choppy says yo')
 
-  describe 'recordStore.memoize', ->
-    it 'returns the current result', ->
-      val = 0
-      func = recordStore.memoize ->
-        val += 1
-        "hello#{val}"
-      expect(func()).toEqual('hello1')
-      expect(func()).toEqual('hello1')
-
-    it 'reruns fun if _version changes', ->
-      val = 0
-      func = recordStore.memoize ->
-        val += 1
-        "hello#{val}"
-      expect(func()).toEqual('hello1')
-      recordStore._version = 44
-      expect(func()).toEqual('hello2')
+  # describe 'recordStore.memoize', ->
+  #   it 'returns the current result', ->
+  #     obj = {val: 0}
+  #     obj.fun
+  #     val = 0
+  #     func = recordStore.memoize ->
+  #       val += 1
+  #       "hello#{val}"
+  #
+  #     expect(func()).toEqual('hello1')
+  #     expect(func()).toEqual('hello1')
+  #
+  #   it 'reruns fun if _version changes', ->
+  #     val = 0
+  #     func = recordStore.memoize ->
+  #       val += 1
+  #       "hello#{val}"
+  #     expect(func()).toEqual('hello1')
+  #     recordStore._version = 44
+  #     expect(func()).toEqual('hello2')
