@@ -42,7 +42,8 @@ module.exports = (RestfulClient, $q) ->
       @import(utils.parseJSON(json))
 
     import: (attributes) ->
-      record = @find(attributes.key or attributes.id)
+      record = @find(attributes.key) if attributes.key?
+      record = @find(attributes.id) if attributes.id? and !record?
       if record
         record.update(attributes)
       else
