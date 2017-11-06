@@ -423,7 +423,12 @@ module.exports = function(RestfulClient, $q) {
 
     BaseRecordsInterface.prototype["import"] = function(attributes) {
       var record;
-      record = this.find(attributes.key || attributes.id);
+      if (attributes.key != null) {
+        record = this.find(attributes.key);
+      }
+      if ((attributes.id != null) && (record == null)) {
+        record = this.find(attributes.id);
+      }
       if (record) {
         record.update(attributes);
       } else {
